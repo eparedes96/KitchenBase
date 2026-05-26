@@ -1,0 +1,5 @@
+/* KitchenBase — App-level layout */
+.App {
+  min-height: 100dvh;
+  background-color: #F5F5F4;
+}

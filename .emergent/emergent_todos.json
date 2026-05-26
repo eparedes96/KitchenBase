@@ -1,0 +1,50 @@
+[
+  {
+    "content": "Phase 2: Install @supabase/supabase-js and add env vars",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Generate SQL migration file (schema.sql) with 14 tables + RLS policies",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Configure Google Fonts and Tailwind design tokens",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Build Supabase client + AuthContext (signup/signin/signout/session persistence)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Build ProtectedRoute and PublicRoute components",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Build Welcome, Login, Register screens (Spanish UI)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Build TopBar + BottomTabBar + AppLayout components",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Build placeholder screens (Home, Despensa, Recetas, Biblioteca, Lista, Descubrir, Settings)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Configure React Router and verify routes work",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Apply SQL schema to Supabase (Manual step: user must paste schema.sql in Supabase SQL Editor; programmatic application blocked because service_role key cannot run arbitrary SQL via the project REST API and no DB password / PAT provided)",
+    "status": "in_progress"
+  },
+  {
+    "content": "Phase 3: End-to-end testing with testing_agent_v3 against 10 user stories",
+    "status": "in_progress"
+  },
+  {
+    "content": "Phase 3: Fix issues found in testing",
+    "status": "pending"
+  }
+]
