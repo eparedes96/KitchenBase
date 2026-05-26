@@ -1,50 +1,50 @@
 [
   {
     "content": "Create seed_despensa.sql with categories, units, ingredients, unit_conversions, unaccent extension, helper function, realtime publication",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
-    "content": "Apply seed data to Supabase (programmatic via REST + ask user for SQL parts)",
-    "status": "pending"
+    "content": "Apply seed data via REST API (categories, units, ingredients, unit_conversions all inserted) + smaller DDL file (despensa_ddl.sql) for user to paste once for unaccent + realtime publication",
+    "status": "completed"
   },
   {
     "content": "Build analytics safe wrapper for PostHog",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Build text utility (accent-insensitive normalize)",
-    "status": "pending"
+    "status": "completed"
   },
   {
-    "content": "Build BottomSheet reusable modal component",
-    "status": "pending"
+    "content": "Build BottomSheet reusable modal",
+    "status": "completed"
   },
   {
     "content": "Build ConfirmDialog component",
-    "status": "pending"
+    "status": "completed"
   },
   {
-    "content": "Build EmptyPantryState component",
-    "status": "pending"
+    "content": "Build EmptyPantryState",
+    "status": "completed"
   },
   {
     "content": "Build PantryItemRow with swipe-to-delete",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Build AddPantryItemModal (MOD-001) with catalog search + new ingredient creation + form",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Build EditPantryItemModal (MOD-002)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Update PantryScreen (PAN-001) with search, segments, grouped lists, FAB, realtime",
-    "status": "pending"
+    "status": "completed"
   },
   {
-    "content": "Test end-to-end with testing_agent_v3",
-    "status": "pending"
+    "content": "End-to-end testing with testing_agent_v3 (100% pass, 0 critical bugs)",
+    "status": "completed"
   }
 ]
