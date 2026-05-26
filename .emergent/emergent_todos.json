@@ -1,46 +1,50 @@
 [
   {
-    "content": "Phase 2: Install @supabase/supabase-js and add env vars",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: Generate SQL migration file (schema.sql) with 14 tables + RLS policies",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: Configure Google Fonts and Tailwind design tokens",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: Build Supabase client + AuthContext",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: Build ProtectedRoute and PublicRoute",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: Build Welcome, Login, Register screens",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: Build TopBar + BottomTabBar + AppLayout",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: Build placeholder screens (Home + 5 tabs + Settings)",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: Configure React Router and verify routes",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 3: End-to-end testing with testing_agent_v3 against 10 user stories (100% pass)",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: Apply SQL schema (USER ACTION REQUIRED: paste /app/frontend/src/sql/schema.sql in Supabase SQL Editor)",
+    "content": "Create seed_despensa.sql with categories, units, ingredients, unit_conversions, unaccent extension, helper function, realtime publication",
     "status": "in_progress"
+  },
+  {
+    "content": "Apply seed data to Supabase (programmatic via REST + ask user for SQL parts)",
+    "status": "pending"
+  },
+  {
+    "content": "Build analytics safe wrapper for PostHog",
+    "status": "pending"
+  },
+  {
+    "content": "Build text utility (accent-insensitive normalize)",
+    "status": "pending"
+  },
+  {
+    "content": "Build BottomSheet reusable modal component",
+    "status": "pending"
+  },
+  {
+    "content": "Build ConfirmDialog component",
+    "status": "pending"
+  },
+  {
+    "content": "Build EmptyPantryState component",
+    "status": "pending"
+  },
+  {
+    "content": "Build PantryItemRow with swipe-to-delete",
+    "status": "pending"
+  },
+  {
+    "content": "Build AddPantryItemModal (MOD-001) with catalog search + new ingredient creation + form",
+    "status": "pending"
+  },
+  {
+    "content": "Build EditPantryItemModal (MOD-002)",
+    "status": "pending"
+  },
+  {
+    "content": "Update PantryScreen (PAN-001) with search, segments, grouped lists, FAB, realtime",
+    "status": "pending"
+  },
+  {
+    "content": "Test end-to-end with testing_agent_v3",
+    "status": "pending"
   }
 ]
