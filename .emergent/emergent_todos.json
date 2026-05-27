@@ -1,50 +1,54 @@
 [
   {
-    "content": "Create seed_despensa.sql with categories, units, ingredients, unit_conversions, unaccent extension, helper function, realtime publication",
-    "status": "completed"
+    "content": "Apply DB migration (alter recipes: is_draft, draft_step + index) via SQL Editor",
+    "status": "in_progress"
   },
   {
-    "content": "Apply seed data via REST API (categories, units, ingredients, unit_conversions all inserted) + smaller DDL file (despensa_ddl.sql) for user to paste once for unaccent + realtime publication",
-    "status": "completed"
+    "content": "Update routes: add /my-recipes/new, /my-recipes/edit/:id (full-screen, no AppLayout), and /my-recipes/:id (placeholder ComingSoon)",
+    "status": "pending"
   },
   {
-    "content": "Build analytics safe wrapper for PostHog",
-    "status": "completed"
+    "content": "Build REC-001 MyRecipesScreen: list, search, FAB, empty state, long-press delete with confirmation",
+    "status": "pending"
   },
   {
-    "content": "Build text utility (accent-insensitive normalize)",
-    "status": "completed"
+    "content": "Build RecipeListCard + EmptyMyRecipesState components",
+    "status": "pending"
   },
   {
-    "content": "Build BottomSheet reusable modal",
-    "status": "completed"
+    "content": "Build REC-002 RecipeWizardScreen with persistent header (X + progress bar) + 5 steps + draft persistence",
+    "status": "pending"
   },
   {
-    "content": "Build ConfirmDialog component",
-    "status": "completed"
+    "content": "Build wizard Step 1 (title), Step 2 (difficulty/time), Step 3 (servings)",
+    "status": "pending"
   },
   {
-    "content": "Build EmptyPantryState",
-    "status": "completed"
+    "content": "Build wizard Step 4 (ingredients) + AddRecipeIngredientModal (without location/basic, with is_key toggle, accepts quarantined ingredients)",
+    "status": "pending"
   },
   {
-    "content": "Build PantryItemRow with swipe-to-delete",
-    "status": "completed"
+    "content": "Build wizard Step 5 (steps batch save) + final 'Guardar receta' with nutrition calc",
+    "status": "pending"
   },
   {
-    "content": "Build AddPantryItemModal (MOD-001) with catalog search + new ingredient creation + form",
-    "status": "completed"
+    "content": "Implement nutrition calculation utility (uses unit_conversions and per-100 values)",
+    "status": "pending"
   },
   {
-    "content": "Build EditPantryItemModal (MOD-002)",
-    "status": "completed"
+    "content": "Resume mode: load existing recipe + ingredients + steps and jump to draft_step",
+    "status": "pending"
   },
   {
-    "content": "Update PantryScreen (PAN-001) with search, segments, grouped lists, FAB, realtime",
-    "status": "completed"
+    "content": "Wire PostHog analytics events for recipes flow",
+    "status": "pending"
   },
   {
-    "content": "End-to-end testing with testing_agent_v3 (100% pass, 0 critical bugs)",
-    "status": "completed"
+    "content": "Apply MOD-001 UX fix: visually mute cantidad+unidad when bsico is ON",
+    "status": "pending"
+  },
+  {
+    "content": "Test end-to-end with testing_agent_v3",
+    "status": "pending"
   }
 ]
