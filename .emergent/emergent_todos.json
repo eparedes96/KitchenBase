@@ -1,30 +1,42 @@
 [
   {
-    "content": "Apply cleanup SQL + migration 007",
+    "content": "Create migration 006_semaphore_engine.sql and request user apply",
     "status": "completed"
   },
   {
-    "content": "Verify backend trigger blocks catalog duplicates",
+    "content": "Verify migration applied + all 4 functions reachable via RPC",
     "status": "completed"
   },
   {
-    "content": "MOD-001: detect duplicates, suppress button, emphasise matched row, helper text",
+    "content": "Tests 1-3 (green/yellow/orange) using existing eparedes recipes",
     "status": "completed"
   },
   {
-    "content": "MOD-001: defensive second check in handleCreateSubmit",
+    "content": "Test 4 (basic ignored) covered by recipe 2b0c17b3 (Huevo basic)",
     "status": "completed"
   },
   {
-    "content": "MOD-001: catch 23505 error and show Spanish messages (verified for both catalog and quarantine paths)",
+    "content": "Test 5 (unit conversion success) using new TEST5 recipe",
     "status": "completed"
   },
   {
-    "content": "Add 2 new PostHog events",
+    "content": "Test 6 (insufficient quantity) using new TEST6 recipe",
     "status": "completed"
   },
   {
-    "content": "End-to-end testing (100% pass on 5 P1.5 tests + manual verification of bypass-path translations)",
+    "content": "Test 7 (quarantine NOT in pantry) covered by recipe 3b8f8efa with ajonjoli",
+    "status": "completed"
+  },
+  {
+    "content": "Test 8 (quarantine IN pantry, matching UUIDs) using new TEST8 recipe",
+    "status": "completed"
+  },
+  {
+    "content": "Test 9 (quarantine unit conversion unavailable) using new TEST9 recipe",
+    "status": "completed"
+  },
+  {
+    "content": "Tests 10/11/12 (library-wide, empty library, not-in-library) all passed",
     "status": "completed"
   }
 ]
