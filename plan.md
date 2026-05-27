@@ -5,10 +5,12 @@
 - Implement **Supabase Auth (email/password)** with session persistence, protected routing, and logout. ✅ **Completed**
 - Provide a **complete Supabase SQL schema** (14 tables + constraints + indexes + RLS policies). ✅ **Delivered** / ✅ **Applied by user**
 - Build **navigation skeleton** (TopBar + BottomTabBar + routes). ✅ **Completed**
-- Build the first content-bearing flow: **Despensa** (PAN-001 + MOD-001 + MOD-002) on top of the skeleton. ✅ **Completed**
+- Build content-bearing flows on top of the skeleton:
+  - **Despensa** (PAN-001 + MOD-001 + MOD-002). ✅ **Completed**
+  - **Mis Recetas** (REC-001 + REC-002 wizard + REC-003 placeholder). ✅ **Completed**
 - Provide **seed catalog data** required for Despensa to function. ✅ **Completed**
-- Add **analytics event capture** for the Despensa flow (PostHog), without PII. ✅ **Completed**
-- Validate everything end-to-end with automated testing. ✅ **Completed (100% pass)**
+- Add **analytics event capture** for Despensa + Mis Recetas (PostHog), without PII. ✅ **Completed**
+- Validate everything end-to-end with automated testing. ✅ **Completed (100% pass across iterations)**
 
 ---
 
@@ -66,7 +68,7 @@ _Steps (implemented)_
   - Settings is a real screen (account + logout). ✅
 - Configured router map and redirects in `src/App.js`:
   - Public: `/welcome`, `/login`, `/register` ✅
-  - Protected: `/`, `/pantry`, `/my-recipes`, `/library`, `/shopping-list`, `/discover`, `/settings` ✅
+  - Protected (AppLayout): `/`, `/pantry`, `/my-recipes`, `/library`, `/shopping-list`, `/discover`, `/settings` ✅
 - Delivered complete schema file at `src/sql/schema.sql`:
   - 14 tables
   - FK + CHECK constraints (including XOR constraint for recipe_ingredients source)
@@ -110,7 +112,7 @@ _Steps (implemented)_
 - Implemented MOD-001 `AddPantryItemModal`:
   - Step 1: catalog search (debounced, client-side normalize) ✅
   - “Crear ingrediente nuevo …” sub-step inserts `user_ingredients` (pending) and shows an info banner; closes modal ✅
-  - Step 2: quantity + unit selector (base + conversions) + location segmented + basic toggle (disables qty/unit) ✅
+  - Step 2: quantity + unit selector (base + conversions) + location segmented + basic toggle ✅
   - Save inserts into `pantry_items`, closes, PAN-001 refreshes ✅
 - Implemented MOD-002 `EditPantryItemModal`:
   - Title = ingredient name (Playfair Display, non-editable), subtitle = category ✅
@@ -125,9 +127,12 @@ _Steps (implemented)_
     - `pantry_item_deleted` { ingredient_id }
     - `user_ingredient_created_in_pantry_flow` { proposed_name } ✅
 
+_Bonus fix completed (later prompt)_
+- MOD-001 UX: when “Marcar como básico” is ON, Cantidad and Unidad become **visually muted** (bg-surface-secondary, text-ink-secondary, cursor-not-allowed) and disabled; when OFF they return to normal. ✅
+
 _Notes_
-- MOD-001 catalog search was implemented client-side (using `normalize()`), so Despensa works even if `unaccent/kb_norm` haven’t been enabled yet.
-- Realtime updates across sessions/tabs are fully supported once `public.pantry_items` is in the `supabase_realtime` publication.
+- MOD-001 catalog search is client-side (using `normalize()`), so Despensa works even if `unaccent/kb_norm` aren’t enabled yet.
+- Realtime updates across sessions/tabs are fully supported once `public.pantry_items` is in `supabase_realtime` publication.
 
 _Remaining one-time user action (optional enhancement)_
 - Paste and run `frontend/src/sql/despensa_ddl.sql` in Supabase SQL Editor. ⏳
@@ -137,20 +142,87 @@ _Remaining one-time user action (optional enhancement)_
 
 ---
 
-### Phase 4 — Testing & Stabilization ✅ Completed
+### Phase 4 — Mis Recetas Flow (REC-001 + REC-002 + REC-003 placeholder) ✅ Completed
+_User stories_
+1. As an authenticated user, I can open **Mis Recetas** and see an empty state if I have no recipes. ✅
+2. As a user, I can create a recipe using a **5-step wizard** that saves a **persistent draft** as I progress. ✅
+3. As a user, I can leave the wizard mid-way and later **resume** from the last saved step. ✅
+4. As a user, I can add ingredients (including quarantined user_ingredients) and mark key ingredients. ✅
+5. As a user, I can add preparation steps and finalize the recipe. ✅
+6. As a user, the wizard hides the bottom tab bar and shows a wizard-specific header. ✅
+7. As a product owner, analytics events fire correctly without PII. ✅
+
+_Database changes (applied by user)_
+- Migration SQL committed: `frontend/src/sql/recipes_draft_migration.sql` ✅
+- User applied via Supabase SQL Editor:
+  - `recipes.is_draft boolean not null default false`
+  - `recipes.draft_step integer`
+  - index `idx_recipes_user_draft (user_id, is_draft)`
+  - `public.recipes` added to `supabase_realtime` publication ✅
+
+_REC-001 — MyRecipesScreen_
+- Sticky search bar “Buscar en mis recetas…” with accent/case-insensitive client filter ✅
+- List ordered by `created_at desc`, realtime subscription on user recipes ✅
+- Cards:
+  - Completed: “NN min · Fácil/Media/Difícil · N raciones” + status pill “Privada” / “Propuesta” (subtle border) ✅
+  - Draft: “En borrador · paso N de 5” + pill “Borrador” (`bg-brand-light text-brand`) ✅
+- FAB “Crear receta” → `/my-recipes/new` ✅
+- Long-press / context-menu delete → confirmation → DELETE `recipes` (cascade) ✅
+- Empty state with CTA “Crear mi primera receta” ✅
+
+_REC-002 — RecipeWizardScreen (full-screen, persistent drafts)_
+- Full-screen outside `AppLayout` so bottom tab bar is hidden ✅
+- Wizard header: X close + “Paso N de 5” + terracotta progress bar ✅
+- Step 1 (Title): creates draft on first “Siguiente” (INSERT), later updates (UPDATE) ✅
+- Step 2 (Difficulty + time): segmented control + time input with “min” suffix; saves on “Siguiente” ✅
+- Step 3 (Servings): stepper 1–20; saves on “Siguiente” ✅
+- Step 4 (Ingredients):
+  - Live persistence: add/remove/toggle key updates `recipe_ingredients` immediately ✅
+  - Recomputes `recipes.has_pending_ingredients` after each change ✅
+  - “Añadir ingrediente” opens AddRecipeIngredientModal (no location/basic; has is_key; supports quarantined) ✅
+- Step 5 (Steps): batch save on “Guardar receta” (replaces recipe_steps) ✅
+- Finalize: sets `is_draft=false`, `draft_step=null`, computes per-serving nutrition from catalog ingredients using `unit_conversions`, excludes quarantined ingredients ✅
+- Close confirmation dialog varies based on whether a draft exists; tracks abandonment analytics ✅
+- Resume mode `/my-recipes/edit/:id`: loads recipe + ingredients + steps, jumps to `draft_step` ✅
+- If opened on non-draft recipe: shows “Edición de recetas completadas — próximamente” placeholder ✅
+
+_REC-003 placeholder route_
+- `/my-recipes/:id` renders `ComingSoon` with title “Detalle de receta”. ✅
+- If the recipe is a draft, it redirects to `/my-recipes/edit/:id`. ✅
+
+_Utilities / shared components added_
+- `src/lib/recipeNutrition.js` computes kcal/protein/carbs/fat/fiber per serving (partial if quarantined ingredients exist). ✅
+- Hydration warning fix: unit `<option>` rendered as a single template literal to avoid invalid DOM nesting in Emergent wrapper. ✅
+
+_Analytics events (recipes)_
+- `my_recipes_screen_viewed`
+- `recipe_wizard_started`
+- `recipe_wizard_resumed` { from_step }
+- `recipe_wizard_step_completed` { step }
+- `recipe_wizard_saved` { step_count, ingredient_count, has_pending_ingredients }
+- `recipe_wizard_abandoned` { last_step }
+- `recipe_deleted_from_list` { was_draft } ✅
+
+---
+
+### Phase 5 — Testing & Stabilization ✅ Completed
 _Testing_
 - `testing_agent_v3` iteration 1 (foundation): **100% pass**, **0 bugs**.
   - Report: `/app/test_reports/iteration_1.json` ✅
 - `testing_agent_v3` iteration 2 (Despensa): **100% pass**, **0 critical bugs**.
   - Report: `/app/test_reports/iteration_2.json` ✅
+- `testing_agent_v3` iteration 3 (Mis Recetas + MOD-001 UX fix): **100% pass**, **0 critical bugs**.
+  - Report: `/app/test_reports/iteration_3.json` ✅
+  - Minor hydration warning reported there was fixed afterwards. ✅
 
 _Known minor test-only note_
 - The platform “Made with Emergent” badge can intercept pointer events in automated tests, occasionally requiring force-click. Low priority; not a real user issue.
 
 ---
 
-### Phase 5 — Future prompts (Out of scope now)
-- Mis Recetas (recipe creation/editing, cooking history)
+### Phase 6 — Future prompts (Out of scope now)
+- **REC-003** full recipe detail screen (display nutrition, ingredients, steps, key ingredients, etc.)
+- Editing already-completed recipes (private/proposed/public flows per decision D-028)
 - Biblioteca (saved community recipes)
 - Lista de la Compra (including generation from recipes)
 - Descubrir (community feed)
@@ -162,13 +234,14 @@ _Known minor test-only note_
 ---
 
 ## 3) Next Actions
-1. ✅ Schema already applied.
-2. **(Optional enhancement — recommended)** Apply Despensa DDL in Supabase:
+1. ✅ Schema applied.
+2. ✅ Recipes draft migration applied.
+3. **(Optional enhancement — recommended)** Apply Despensa DDL in Supabase:
    - Supabase Dashboard → Project `ldrxurbtrbjhxmrpdtjr` → SQL Editor → New query
    - Paste `frontend/src/sql/despensa_ddl.sql`
    - Click **Run**
-3. Continue with the next flow prompt (recommended order):
-   1) Mis Recetas → 2) Lista de la Compra → 3) Biblioteca → 4) Descubrir.
+4. Continue with the next flow prompt (recommended order):
+   1) **REC-003 Detalle de receta** → 2) Lista de la Compra → 3) Biblioteca → 4) Descubrir.
 
 ---
 
@@ -178,4 +251,5 @@ _Known minor test-only note_
 - Navigation: TopBar + BottomTabBar present on all protected screens; correct active tab styling. ✅
 - Database: `schema.sql` creates all 14 tables with correct constraints, indexes, and RLS policies. ✅ **Applied**
 - Despensa: PAN-001 + MOD-001 + MOD-002 work end-to-end with Supabase persistence, accent-insensitive search, delete confirmations, and analytics events. ✅
-- QA: automated testing confirms foundation + Despensa with no console errors and 100% pass. ✅
+- Mis Recetas: REC-001 list + REC-002 5-step wizard drafts/resume + REC-003 placeholder route work end-to-end with Supabase persistence and analytics events. ✅
+- QA: automated testing confirms foundation + Despensa + Mis Recetas with 100% pass. ✅

@@ -532,9 +532,7 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
                 }`}
               >
                 {availableUnits.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name} ({u.symbol})
-                  </option>
+                  <option key={u.id} value={u.id}>{`${u.name} (${u.symbol})`}</option>
                 ))}
               </select>
             </label>

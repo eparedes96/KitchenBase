@@ -1,54 +1,58 @@
 [
   {
-    "content": "Apply DB migration (alter recipes: is_draft, draft_step + index) via SQL Editor",
-    "status": "in_progress"
+    "content": "Apply DB migration (alter recipes: is_draft, draft_step + index) via SQL Editor (USER DONE)",
+    "status": "completed"
   },
   {
-    "content": "Update routes: add /my-recipes/new, /my-recipes/edit/:id (full-screen, no AppLayout), and /my-recipes/:id (placeholder ComingSoon)",
-    "status": "pending"
+    "content": "Update routes: /my-recipes/new, /my-recipes/edit/:id (full-screen), /my-recipes/:id (placeholder)",
+    "status": "completed"
   },
   {
-    "content": "Build REC-001 MyRecipesScreen: list, search, FAB, empty state, long-press delete with confirmation",
-    "status": "pending"
+    "content": "REC-001 MyRecipesScreen: list, search, FAB, empty state, long-press delete",
+    "status": "completed"
   },
   {
-    "content": "Build RecipeListCard + EmptyMyRecipesState components",
-    "status": "pending"
+    "content": "RecipeListCard + EmptyMyRecipesState",
+    "status": "completed"
   },
   {
-    "content": "Build REC-002 RecipeWizardScreen with persistent header (X + progress bar) + 5 steps + draft persistence",
-    "status": "pending"
+    "content": "REC-002 RecipeWizardScreen with persistent header + 5 steps + draft persistence",
+    "status": "completed"
   },
   {
-    "content": "Build wizard Step 1 (title), Step 2 (difficulty/time), Step 3 (servings)",
-    "status": "pending"
+    "content": "Wizard Step 1/2/3 (title, difficulty/time, servings)",
+    "status": "completed"
   },
   {
-    "content": "Build wizard Step 4 (ingredients) + AddRecipeIngredientModal (without location/basic, with is_key toggle, accepts quarantined ingredients)",
-    "status": "pending"
+    "content": "Wizard Step 4 + AddRecipeIngredientModal (no location/basic, has is_key, accepts quarantined ingredients)",
+    "status": "completed"
   },
   {
-    "content": "Build wizard Step 5 (steps batch save) + final 'Guardar receta' with nutrition calc",
-    "status": "pending"
+    "content": "Wizard Step 5 + final 'Guardar receta' with nutrition calc",
+    "status": "completed"
   },
   {
-    "content": "Implement nutrition calculation utility (uses unit_conversions and per-100 values)",
-    "status": "pending"
+    "content": "Nutrition calculation utility (uses unit_conversions and per-100 values)",
+    "status": "completed"
   },
   {
-    "content": "Resume mode: load existing recipe + ingredients + steps and jump to draft_step",
-    "status": "pending"
+    "content": "Resume mode: load recipe + ingredients + steps and jump to draft_step",
+    "status": "completed"
   },
   {
-    "content": "Wire PostHog analytics events for recipes flow",
-    "status": "pending"
+    "content": "PostHog analytics events for recipes flow",
+    "status": "completed"
   },
   {
-    "content": "Apply MOD-001 UX fix: visually mute cantidad+unidad when bsico is ON",
-    "status": "pending"
+    "content": "MOD-001 UX fix: visually mute cantidad+unidad when bsico is ON",
+    "status": "completed"
   },
   {
-    "content": "Test end-to-end with testing_agent_v3",
-    "status": "pending"
+    "content": "Fix React hydration warning (span inside option) by collapsing children to single template literal",
+    "status": "completed"
+  },
+  {
+    "content": "End-to-end testing with testing_agent_v3 (100% pass)",
+    "status": "completed"
   }
 ]

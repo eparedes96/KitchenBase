@@ -515,9 +515,7 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
                 className="h-11 w-full rounded-md border border-line bg-surface px-3 text-body text-ink focus:border-brand focus:outline-none"
               >
                 {availableUnits.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name} ({u.symbol})
-                  </option>
+                  <option key={u.id} value={u.id}>{`${u.name} (${u.symbol})`}</option>
                 ))}
               </select>
             </label>
