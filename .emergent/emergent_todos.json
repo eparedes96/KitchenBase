@@ -4,7 +4,7 @@
     "status": "completed"
   },
   {
-    "content": "Verify backend trigger blocks catalog duplicates (23505 + correct Spanish messages)",
+    "content": "Verify backend trigger blocks catalog duplicates",
     "status": "completed"
   },
   {
@@ -16,15 +16,15 @@
     "status": "completed"
   },
   {
-    "content": "MOD-001: catch 23505 error and show Spanish messages",
+    "content": "MOD-001: catch 23505 error and show Spanish messages (verified for both catalog and quarantine paths)",
     "status": "completed"
   },
   {
-    "content": "Add 2 new PostHog events (button_suppressed + save_check + backend_trigger via)",
+    "content": "Add 2 new PostHog events",
     "status": "completed"
   },
   {
-    "content": "End-to-end test with testing_agent_v3",
-    "status": "in_progress"
+    "content": "End-to-end testing (100% pass on 5 P1.5 tests + manual verification of bypass-path translations)",
+    "status": "completed"
   }
 ]
