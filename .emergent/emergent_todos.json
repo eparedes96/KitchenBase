@@ -1,38 +1,30 @@
 [
   {
-    "content": "Verify migration applied",
+    "content": "Apply cleanup SQL + migration 007",
     "status": "completed"
   },
   {
-    "content": "Update MOD-001: 'Crear ingrediente nuevo' continues to pantry form; save with user_ingredient_id; simplified unit selector + helper text + pending banner",
+    "content": "Verify backend trigger blocks catalog duplicates (23505 + correct Spanish messages)",
     "status": "completed"
   },
   {
-    "content": "Update MOD-001 search: also query user_ingredients; display 'Pendiente' pill on results",
+    "content": "MOD-001: detect duplicates, suppress button, emphasise matched row, helper text",
     "status": "completed"
   },
   {
-    "content": "Update PantryScreen fetch: include user_ingredient_id + join user_ingredients; synthetic 'Pendientes de validacin' group",
+    "content": "MOD-001: defensive second check in handleCreateSubmit",
     "status": "completed"
   },
   {
-    "content": "Update MOD-002 EditPantryItemModal: base-unit-only selector + helper text for quarantine items",
+    "content": "MOD-001: catch 23505 error and show Spanish messages",
     "status": "completed"
   },
   {
-    "content": "Update PantryItemRow: render 'Pendiente' pill when user_ingredient_id is present",
+    "content": "Add 2 new PostHog events (button_suppressed + save_check + backend_trigger via)",
     "status": "completed"
   },
   {
-    "content": "Add recipe title duplicate check on Step 1 and Step 5 (trim+lowercase, accent-sensitive, exclude drafts and self)",
-    "status": "completed"
-  },
-  {
-    "content": "Add 3 new PostHog events",
-    "status": "completed"
-  },
-  {
-    "content": "End-to-end testing with testing_agent_v3 (100% pass)",
-    "status": "completed"
+    "content": "End-to-end test with testing_agent_v3",
+    "status": "in_progress"
   }
 ]

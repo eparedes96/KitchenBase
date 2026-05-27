@@ -203,11 +203,81 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
     })();
   }, [selected]);
 
-  const exactMatchExists = useMemo(() => {
-    if (!query.trim()) return true;
-    const n = normalize(query);
-    return (results || []).some((r) => normalize(r.name) === n);
-  }, [results, query]);
+  // Detect a duplicate match against catalog or own quarantine.
+  //
+  // This implements decision D-031: when the input matches an existing
+  // ingredient (catalog OR own quarantine) we block the "Crear nuevo"
+  // button and surface the matching row at the top of the list.
+  //
+  // Comparison: accent-insensitive + case-insensitive + trim-insensitive
+  // (same normalization used elsewhere in the search UI). Catalog match
+  // wins over quarantine match when both are possible.
+  const duplicateMatch = useMemo(() => {
+    const q = query.trim();
+    if (!q) return null;
+    const n = normalize(q);
+    const catalog = (catalogRows || []).find((r) => normalize(r.name) === n);
+    if (catalog) {
+      return {
+        kind: "catalog",
+        row: {
+          _kind: "catalog",
+          id: catalog.id,
+          name: catalog.name,
+          base_unit: catalog.base_unit,
+          category_name: catalog.ingredient_categories?.name ?? "",
+        },
+      };
+    }
+    const quar = (quarantineRows || []).find((r) => normalize(r.name) === n);
+    if (quar) {
+      return {
+        kind: "quarantine",
+        row: {
+          _kind: "quarantine",
+          id: quar.id,
+          name: quar.name,
+          base_unit: quar.base_unit,
+          category_name: "Pendiente de validación",
+        },
+      };
+    }
+    return null;
+  }, [query, catalogRows, quarantineRows]);
+
+  // Fire blocked-creation analytics ONCE per unique match transition.
+  const lastBlockKeyRef = useRef("");
+  useEffect(() => {
+    const key = duplicateMatch
+      ? `${duplicateMatch.kind}:${duplicateMatch.row.id}`
+      : "";
+    if (key && key !== lastBlockKeyRef.current) {
+      lastBlockKeyRef.current = key;
+      if (duplicateMatch.kind === "catalog") {
+        track("ingredient_creation_blocked_catalog_match", {
+          via: "frontend_button_suppressed",
+        });
+      } else {
+        track("ingredient_creation_blocked_quarantine_match", {
+          via: "frontend_button_suppressed",
+        });
+      }
+    } else if (!key) {
+      lastBlockKeyRef.current = "";
+    }
+  }, [duplicateMatch]);
+
+  // Reorder visible results to put the matched row first, dedupe by id.
+  const orderedResults = useMemo(() => {
+    if (!duplicateMatch) return results;
+    const matchId = duplicateMatch.row.id;
+    const matchKind = duplicateMatch.kind;
+    const top = duplicateMatch.row;
+    const rest = (results || []).filter(
+      (r) => !(r.id === matchId && r._kind === matchKind)
+    );
+    return [top, ...rest];
+  }, [results, duplicateMatch]);
 
   // -------- handlers --------
   const handlePickResult = (row) => {
@@ -229,7 +299,8 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
 
   const handleCreateSubmit = async () => {
     setErrorMsg("");
-    if (!createName.trim()) {
+    const trimmedName = createName.trim();
+    if (!trimmedName) {
       setErrorMsg("Indica un nombre para el ingrediente.");
       return;
     }
@@ -241,12 +312,61 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
       setErrorMsg("Selecciona una unidad base.");
       return;
     }
+
     setSubmitting(true);
+
+    // Defensive re-check against catalog + quarantine right before INSERT.
+    // Guards against race conditions and the (theoretical) case where the
+    // user reaches this step despite the suppressed button.
+    const dupKey = trimmedName.toLowerCase();
+
+    // 1) Catalog match (server-side comparison is lower(trim(name)), so we
+    //    use case-insensitive ilike with the trimmed value).
+    const { data: catalogHit } = await supabase
+      .from("ingredients")
+      .select("id, name")
+      .ilike("name", trimmedName)
+      .limit(20);
+    const catalogDup = (catalogHit || []).find(
+      (r) => (r.name || "").trim().toLowerCase() === dupKey
+    );
+    if (catalogDup) {
+      setSubmitting(false);
+      setErrorMsg(
+        "Este ingrediente ya está en el catálogo. Selecciónalo de la búsqueda."
+      );
+      track("ingredient_creation_blocked_catalog_match", {
+        via: "frontend_save_check",
+      });
+      return;
+    }
+
+    // 2) Own quarantine match
+    const { data: quarHit } = await supabase
+      .from("user_ingredients")
+      .select("id, name")
+      .eq("created_by", user.id)
+      .ilike("name", trimmedName)
+      .limit(20);
+    const quarDup = (quarHit || []).find(
+      (r) => (r.name || "").trim().toLowerCase() === dupKey
+    );
+    if (quarDup) {
+      setSubmitting(false);
+      setErrorMsg(
+        "Ya tienes este ingrediente pendiente de validar. Selecciónalo de la búsqueda."
+      );
+      track("ingredient_creation_blocked_quarantine_match", {
+        via: "frontend_save_check",
+      });
+      return;
+    }
+
     const { data, error } = await supabase
       .from("user_ingredients")
       .insert({
         created_by: user.id,
-        name: createName.trim(),
+        name: trimmedName,
         base_unit: createBaseUnit,
         status: "pending",
       })
@@ -254,13 +374,39 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
       .single();
     setSubmitting(false);
     if (error || !data) {
+      // Backend trigger raises code 23505 with a deterministic message.
+      // Translate to a friendly Spanish error and fire the right analytic.
+      if (error?.code === "23505") {
+        const msg = (error.message || "").toLowerCase();
+        if (msg.includes("global catalog")) {
+          setErrorMsg(
+            "Este ingrediente ya está en el catálogo. Selecciónalo de la búsqueda."
+          );
+          track("ingredient_creation_blocked_catalog_match", {
+            via: "backend_trigger",
+          });
+        } else if (
+          msg.includes("pending ingredient") ||
+          msg.includes("you already have")
+        ) {
+          setErrorMsg(
+            "Ya tienes este ingrediente pendiente de validar. Selecciónalo de la búsqueda."
+          );
+          track("ingredient_creation_blocked_quarantine_match", {
+            via: "backend_trigger",
+          });
+        } else {
+          setErrorMsg("Este ingrediente ya existe. Selecciónalo de la búsqueda.");
+        }
+        return;
+      }
       setErrorMsg(
         "No se pudo proponer el ingrediente. Comprueba tu conexión e inténtalo de nuevo."
       );
       return;
     }
     track("user_ingredient_created_in_pantry_flow", {
-      proposed_name: createName.trim(),
+      proposed_name: trimmedName,
     });
 
     // Refresh quarantineRows cache so the new item appears in subsequent searches
@@ -418,42 +564,50 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
           >
             {searching ? (
               <li className="px-4 py-3 text-caption text-ink-secondary">Buscando…</li>
-            ) : (results || []).length === 0 && query.trim() === "" ? (
+            ) : (orderedResults || []).length === 0 && query.trim() === "" ? (
               <li className="px-4 py-6 text-center text-caption text-ink-secondary">
                 Empieza a escribir para buscar.
               </li>
             ) : (
-              (results || []).map((r) => (
-                <li
-                  key={`${r._kind}-${r.id}`}
-                  className="border-b border-line last:border-b-0"
-                >
-                  <button
-                    type="button"
-                    onClick={() => handlePickResult(r)}
-                    data-testid={`add-pantry-result-${r.id}`}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-brand-light"
+              (orderedResults || []).map((r) => {
+                const isMatched =
+                  duplicateMatch &&
+                  duplicateMatch.row.id === r.id &&
+                  duplicateMatch.kind === r._kind;
+                return (
+                  <li
+                    key={`${r._kind}-${r.id}`}
+                    className="border-b border-line last:border-b-0"
                   >
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-body text-ink">{r.name}</span>
-                      <span className="truncate text-caption text-ink-secondary">
-                        {r.category_name}
+                    <button
+                      type="button"
+                      onClick={() => handlePickResult(r)}
+                      data-testid={`add-pantry-result-${r.id}`}
+                      className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-brand-light ${
+                        isMatched ? "bg-brand-light" : ""
+                      }`}
+                    >
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="truncate text-body text-ink">{r.name}</span>
+                        <span className="truncate text-caption text-ink-secondary">
+                          {r.category_name}
+                        </span>
                       </span>
-                    </span>
-                    {r._kind === "quarantine" ? (
-                      <span
-                        data-testid={`add-pantry-result-pending-pill-${r.id}`}
-                        className="ml-2 inline-flex h-5 flex-shrink-0 items-center rounded-full bg-brand-light px-2 text-[10px] font-semibold uppercase tracking-wide text-brand"
-                      >
-                        Pendiente
-                      </span>
-                    ) : null}
-                  </button>
-                </li>
-              ))
+                      {r._kind === "quarantine" ? (
+                        <span
+                          data-testid={`add-pantry-result-pending-pill-${r.id}`}
+                          className="ml-2 inline-flex h-5 flex-shrink-0 items-center rounded-full bg-brand-light px-2 text-[10px] font-semibold uppercase tracking-wide text-brand"
+                        >
+                          Pendiente
+                        </span>
+                      ) : null}
+                    </button>
+                  </li>
+                );
+              })
             )}
 
-            {query.trim() && !exactMatchExists ? (
+            {query.trim() && !duplicateMatch ? (
               <li className="border-t border-line">
                 <button
                   type="button"
@@ -472,6 +626,15 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
               </li>
             ) : null}
           </ul>
+
+          {duplicateMatch ? (
+            <p
+              data-testid="add-pantry-duplicate-helper"
+              className="text-caption text-ink-secondary"
+            >
+              Este ingrediente ya existe. Selecciónalo de la lista.
+            </p>
+          ) : null}
         </div>
       ) : null}
 
