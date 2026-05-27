@@ -1,38 +1,38 @@
 [
   {
-    "content": "Verify migration applied (user_ingredient_id column exists)",
+    "content": "Verify migration applied",
     "status": "completed"
   },
   {
-    "content": "Update MOD-001 AddPantryItemModal: 'Crear ingrediente nuevo' continues to pantry form (not auto-close); save with user_ingredient_id; simplified unit selector (base only) + helper text",
-    "status": "in_progress"
+    "content": "Update MOD-001: 'Crear ingrediente nuevo' continues to pantry form; save with user_ingredient_id; simplified unit selector + helper text + pending banner",
+    "status": "completed"
   },
   {
-    "content": "Update MOD-001 search: also query user_ingredients (status=pending, current user); display 'Pendiente' pill on quarantine results",
-    "status": "pending"
+    "content": "Update MOD-001 search: also query user_ingredients; display 'Pendiente' pill on results",
+    "status": "completed"
   },
   {
-    "content": "Update PantryScreen fetch: include user_ingredient_id + join user_ingredients; show 'Pendiente' pill on quarantine rows",
-    "status": "pending"
+    "content": "Update PantryScreen fetch: include user_ingredient_id + join user_ingredients; synthetic 'Pendientes de validacin' group",
+    "status": "completed"
   },
   {
-    "content": "Update MOD-002 EditPantryItemModal: handle quarantine items (base-unit-only selector + helper text + correct name source)",
-    "status": "pending"
+    "content": "Update MOD-002 EditPantryItemModal: base-unit-only selector + helper text for quarantine items",
+    "status": "completed"
   },
   {
-    "content": "Update PantryItemRow: render 'Pendiente' pill when item has user_ingredient_id",
-    "status": "pending"
+    "content": "Update PantryItemRow: render 'Pendiente' pill when user_ingredient_id is present",
+    "status": "completed"
   },
   {
-    "content": "Add recipe title duplicate check on Step 1 and Step 5 of wizard (case- and trim-insensitive, accent-sensitive, exclude drafts and self)",
-    "status": "pending"
+    "content": "Add recipe title duplicate check on Step 1 and Step 5 (trim+lowercase, accent-sensitive, exclude drafts and self)",
+    "status": "completed"
   },
   {
     "content": "Add 3 new PostHog events",
-    "status": "pending"
+    "status": "completed"
   },
   {
-    "content": "Test end-to-end (manual smoke + testing_agent_v3)",
-    "status": "pending"
+    "content": "End-to-end testing with testing_agent_v3 (100% pass)",
+    "status": "completed"
   }
 ]
