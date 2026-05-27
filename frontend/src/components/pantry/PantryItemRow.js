@@ -134,6 +134,16 @@ export function PantryItemRow({ item, viewMode, onEdit, onDelete }) {
                 Básico
               </span>
             ) : null}
+            {item.is_quarantine ? (
+              <span
+                data-testid="pantry-row-pending-pill"
+                title="Este ingrediente espera validación del admin."
+                aria-label="Pendiente de validación"
+                className="inline-flex h-5 items-center rounded-full bg-brand-light px-2 text-[10px] font-semibold uppercase tracking-wide text-brand"
+              >
+                Pendiente
+              </span>
+            ) : null}
           </div>
           <span className="truncate text-caption text-ink-secondary">
             {viewMode === "location"

@@ -1,58 +1,38 @@
 [
   {
-    "content": "Apply DB migration (alter recipes: is_draft, draft_step + index) via SQL Editor (USER DONE)",
+    "content": "Verify migration applied (user_ingredient_id column exists)",
     "status": "completed"
   },
   {
-    "content": "Update routes: /my-recipes/new, /my-recipes/edit/:id (full-screen), /my-recipes/:id (placeholder)",
-    "status": "completed"
+    "content": "Update MOD-001 AddPantryItemModal: 'Crear ingrediente nuevo' continues to pantry form (not auto-close); save with user_ingredient_id; simplified unit selector (base only) + helper text",
+    "status": "in_progress"
   },
   {
-    "content": "REC-001 MyRecipesScreen: list, search, FAB, empty state, long-press delete",
-    "status": "completed"
+    "content": "Update MOD-001 search: also query user_ingredients (status=pending, current user); display 'Pendiente' pill on quarantine results",
+    "status": "pending"
   },
   {
-    "content": "RecipeListCard + EmptyMyRecipesState",
-    "status": "completed"
+    "content": "Update PantryScreen fetch: include user_ingredient_id + join user_ingredients; show 'Pendiente' pill on quarantine rows",
+    "status": "pending"
   },
   {
-    "content": "REC-002 RecipeWizardScreen with persistent header + 5 steps + draft persistence",
-    "status": "completed"
+    "content": "Update MOD-002 EditPantryItemModal: handle quarantine items (base-unit-only selector + helper text + correct name source)",
+    "status": "pending"
   },
   {
-    "content": "Wizard Step 1/2/3 (title, difficulty/time, servings)",
-    "status": "completed"
+    "content": "Update PantryItemRow: render 'Pendiente' pill when item has user_ingredient_id",
+    "status": "pending"
   },
   {
-    "content": "Wizard Step 4 + AddRecipeIngredientModal (no location/basic, has is_key, accepts quarantined ingredients)",
-    "status": "completed"
+    "content": "Add recipe title duplicate check on Step 1 and Step 5 of wizard (case- and trim-insensitive, accent-sensitive, exclude drafts and self)",
+    "status": "pending"
   },
   {
-    "content": "Wizard Step 5 + final 'Guardar receta' with nutrition calc",
-    "status": "completed"
+    "content": "Add 3 new PostHog events",
+    "status": "pending"
   },
   {
-    "content": "Nutrition calculation utility (uses unit_conversions and per-100 values)",
-    "status": "completed"
-  },
-  {
-    "content": "Resume mode: load recipe + ingredients + steps and jump to draft_step",
-    "status": "completed"
-  },
-  {
-    "content": "PostHog analytics events for recipes flow",
-    "status": "completed"
-  },
-  {
-    "content": "MOD-001 UX fix: visually mute cantidad+unidad when bsico is ON",
-    "status": "completed"
-  },
-  {
-    "content": "Fix React hydration warning (span inside option) by collapsing children to single template literal",
-    "status": "completed"
-  },
-  {
-    "content": "End-to-end testing with testing_agent_v3 (100% pass)",
-    "status": "completed"
+    "content": "Test end-to-end (manual smoke + testing_agent_v3)",
+    "status": "pending"
   }
 ]

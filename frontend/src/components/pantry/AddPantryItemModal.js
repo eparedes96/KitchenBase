@@ -11,9 +11,12 @@ import { track } from "@/lib/analytics";
  * MOD-001 — Añadir Ingrediente a Despensa.
  *
  * Three internal steps:
- *   step === "search"  -> catalog search + option to create new ingredient
+ *   step === "search"  -> catalog + own-quarantine search + option to create new
  *   step === "create"  -> mini form to propose a new (quarantined) ingredient
  *   step === "form"    -> quantity / unit / location / basic toggle
+ *
+ * Implements decision D-029: pantry_items can now reference either a catalog
+ * ingredient (ingredient_id) or a quarantined user_ingredient (user_ingredient_id).
  */
 export function AddPantryItemModal({ open, onClose, onSaved }) {
   const { user } = useAuth();
@@ -23,7 +26,14 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
-  const [selectedIngredient, setSelectedIngredient] = useState(null);
+
+  // Selected source. Shape:
+  //   { kind: 'catalog' | 'quarantine',
+  //     id: string,
+  //     name: string,
+  //     base_unit: 'g' | 'ml',
+  //     category_name?: string }
+  const [selected, setSelected] = useState(null);
 
   // Form state
   const [quantity, setQuantity] = useState("");
@@ -41,7 +51,6 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
   // Submission state
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [infoMsg, setInfoMsg] = useState("");
 
   const debounceRef = useRef(null);
 
@@ -51,7 +60,7 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
       setStep("search");
       setQuery("");
       setResults([]);
-      setSelectedIngredient(null);
+      setSelected(null);
       setQuantity("");
       setUnitId("");
       setAvailableUnits([]);
@@ -62,46 +71,87 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
       setCreateBaseUnit("g");
       setSubmitting(false);
       setErrorMsg("");
-      setInfoMsg("");
     }
   }, [open]);
 
-  // Catalog search (debounced, client-side filter for accent-insensitivity)
-  const [allCatalog, setAllCatalog] = useState(null);
+  // ----- Sources loaded once per open -----
+  const [catalogRows, setCatalogRows] = useState(null);    // catalog ingredients
+  const [quarantineRows, setQuarantineRows] = useState(null); // user's quarantine
 
   useEffect(() => {
-    if (!open || step !== "search" || allCatalog) return;
-    (async () => {
-      const { data } = await supabase
-        .from("ingredients")
-        .select("id, name, base_unit, category_id, ingredient_categories!inner(name)")
-        .order("name", { ascending: true });
-      setAllCatalog(data || []);
-    })();
-  }, [open, step, allCatalog]);
+    if (!open || step !== "search") return;
+    // Catalog ingredients (RLS allows authenticated SELECT)
+    if (catalogRows == null) {
+      (async () => {
+        const { data } = await supabase
+          .from("ingredients")
+          .select(
+            "id, name, base_unit, category_id, ingredient_categories!inner(name)"
+          )
+          .order("name", { ascending: true });
+        setCatalogRows(data || []);
+      })();
+    }
+    // User's own quarantine ingredients (status = pending)
+    if (quarantineRows == null && user) {
+      (async () => {
+        const { data } = await supabase
+          .from("user_ingredients")
+          .select("id, name, base_unit, status")
+          .eq("created_by", user.id)
+          .eq("status", "pending")
+          .order("name", { ascending: true });
+        setQuarantineRows(data || []);
+      })();
+    }
+  }, [open, step, user, catalogRows, quarantineRows]);
 
+  // Merged "search items" list: catalog rows + quarantine rows uniformly shaped
+  const mergedItems = useMemo(() => {
+    const arr = [];
+    (catalogRows || []).forEach((r) => {
+      arr.push({
+        _kind: "catalog",
+        id: r.id,
+        name: r.name,
+        base_unit: r.base_unit,
+        category_name: r.ingredient_categories?.name ?? "",
+      });
+    });
+    (quarantineRows || []).forEach((r) => {
+      arr.push({
+        _kind: "quarantine",
+        id: r.id,
+        name: r.name,
+        base_unit: r.base_unit,
+        category_name: "Pendiente de validación",
+      });
+    });
+    arr.sort((a, b) => a.name.localeCompare(b.name, "es"));
+    return arr;
+  }, [catalogRows, quarantineRows]);
+
+  // Debounced client-side filter
   useEffect(() => {
     if (!open || step !== "search") return undefined;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setSearching(true);
-      const source = allCatalog ?? [];
       const q = query.trim();
       if (!q) {
-        setResults(source.slice(0, 20));
+        setResults(mergedItems.slice(0, 20));
       } else {
         const n = normalize(q);
-        const filtered = source.filter((row) =>
-          normalize(row.name).includes(n)
+        setResults(
+          mergedItems.filter((r) => normalize(r.name).includes(n)).slice(0, 20)
         );
-        setResults(filtered.slice(0, 20));
       }
       setSearching(false);
     }, 200);
     return () => debounceRef.current && clearTimeout(debounceRef.current);
-  }, [open, query, step, allCatalog]);
+  }, [open, query, step, mergedItems]);
 
-  // Load categories when entering the "create" sub-step
+  // Load categories when entering create sub-step
   useEffect(() => {
     if (step !== "create" || categories.length > 0) return;
     (async () => {
@@ -114,38 +164,44 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
     })();
   }, [step, categories.length]);
 
-  // When an ingredient is picked, load its available units (base + conversions)
+  // Whenever `selected` changes, recompute available units
   useEffect(() => {
-    if (!selectedIngredient) {
+    if (!selected) {
       setAvailableUnits([]);
       setUnitId("");
       return;
     }
     (async () => {
-      // Base unit: find the 'gramo' or 'mililitro' unit row
-      const baseUnitName = selectedIngredient.base_unit === "g" ? "gramo" : "mililitro";
+      const baseUnitName = selected.base_unit === "ml" ? "mililitro" : "gramo";
       const { data: baseRow } = await supabase
         .from("units")
         .select("id, name, symbol")
         .eq("name", baseUnitName)
         .single();
 
-      const { data: convs } = await supabase
-        .from("unit_conversions")
-        .select("unit_id, units!inner(id, name, symbol)")
-        .eq("ingredient_id", selectedIngredient.id);
-
       const list = [];
       if (baseRow) list.push(baseRow);
-      (convs || []).forEach((c) => {
-        if (c.units && c.units.id !== baseRow?.id) {
-          list.push({ id: c.units.id, name: c.units.name, symbol: c.units.symbol });
-        }
-      });
+
+      // Only catalog ingredients have unit_conversions. Quarantine ones don't.
+      if (selected.kind === "catalog") {
+        const { data: convs } = await supabase
+          .from("unit_conversions")
+          .select("unit_id, units!inner(id, name, symbol)")
+          .eq("ingredient_id", selected.id);
+        (convs || []).forEach((c) => {
+          if (c.units && c.units.id !== baseRow?.id) {
+            list.push({
+              id: c.units.id,
+              name: c.units.name,
+              symbol: c.units.symbol,
+            });
+          }
+        });
+      }
       setAvailableUnits(list);
       setUnitId(baseRow?.id ?? "");
     })();
-  }, [selectedIngredient]);
+  }, [selected]);
 
   const exactMatchExists = useMemo(() => {
     if (!query.trim()) return true;
@@ -154,8 +210,14 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
   }, [results, query]);
 
   // -------- handlers --------
-  const handlePickIngredient = (ing) => {
-    setSelectedIngredient(ing);
+  const handlePickResult = (row) => {
+    setSelected({
+      kind: row._kind, // 'catalog' | 'quarantine'
+      id: row.id,
+      name: row.name,
+      base_unit: row.base_unit,
+      category_name: row.category_name,
+    });
     setStep("form");
     setErrorMsg("");
   };
@@ -180,14 +242,18 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("user_ingredients").insert({
-      created_by: user.id,
-      name: createName.trim(),
-      base_unit: createBaseUnit,
-      status: "pending",
-    });
+    const { data, error } = await supabase
+      .from("user_ingredients")
+      .insert({
+        created_by: user.id,
+        name: createName.trim(),
+        base_unit: createBaseUnit,
+        status: "pending",
+      })
+      .select("id, name, base_unit")
+      .single();
     setSubmitting(false);
-    if (error) {
+    if (error || !data) {
       setErrorMsg(
         "No se pudo proponer el ingrediente. Comprueba tu conexión e inténtalo de nuevo."
       );
@@ -196,23 +262,33 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
     track("user_ingredient_created_in_pantry_flow", {
       proposed_name: createName.trim(),
     });
-    setInfoMsg(
-      `Tu ingrediente “${createName.trim()}” está pendiente de validación. Por ahora no puede añadirse a la despensa, pero podrás usarlo en tus recetas.`
-    );
-    // After a moment, close the modal so the user can continue.
-    setTimeout(() => {
-      onClose?.();
-    }, 1800);
+
+    // Refresh quarantineRows cache so the new item appears in subsequent searches
+    setQuarantineRows((prev) => [
+      ...(prev || []),
+      { id: data.id, name: data.name, base_unit: data.base_unit, status: "pending" },
+    ]);
+
+    // Continue to the form step with this quarantine ingredient selected
+    const cat = categories.find((c) => c.id === createCategoryId);
+    setSelected({
+      kind: "quarantine",
+      id: data.id,
+      name: data.name,
+      base_unit: data.base_unit,
+      category_name: cat?.name ?? "Pendiente de validación",
+    });
+    setStep("form");
   };
 
   const handleSave = async () => {
     setErrorMsg("");
-    if (!selectedIngredient) {
+    if (!selected) {
       setErrorMsg("Selecciona un ingrediente.");
       return;
     }
     if (!isBasic) {
-      const n = parseFloat(quantity.replace(",", "."));
+      const n = parseFloat(String(quantity).replace(",", "."));
       if (!Number.isFinite(n) || n <= 0) {
         setErrorMsg("Introduce una cantidad mayor que cero.");
         return;
@@ -225,10 +301,11 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
     setSubmitting(true);
     const payload = {
       user_id: user.id,
-      ingredient_id: selectedIngredient.id,
+      ingredient_id: selected.kind === "catalog" ? selected.id : null,
+      user_ingredient_id: selected.kind === "quarantine" ? selected.id : null,
       location,
       is_basic: isBasic,
-      quantity: isBasic ? null : parseFloat(quantity.replace(",", ".")),
+      quantity: isBasic ? null : parseFloat(String(quantity).replace(",", ".")),
       unit_id: isBasic ? null : unitId,
       updated_at: new Date().toISOString(),
     };
@@ -240,22 +317,27 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
       );
       return;
     }
-    track("pantry_item_added", {
-      ingredient_id: selectedIngredient.id,
-      is_basic: isBasic,
-      location,
-    });
+    if (selected.kind === "quarantine") {
+      track("pantry_item_added_quarantine", { is_basic: isBasic });
+    } else {
+      track("pantry_item_added", {
+        ingredient_id: selected.id,
+        is_basic: isBasic,
+        location,
+      });
+    }
     onSaved?.();
     onClose?.();
   };
 
-  // -------- render helpers --------
   const canSave = (() => {
-    if (!selectedIngredient) return false;
+    if (!selected) return false;
     if (isBasic) return true;
-    const n = parseFloat(quantity.replace(",", "."));
+    const n = parseFloat(String(quantity).replace(",", "."));
     return Number.isFinite(n) && n > 0 && !!unitId;
   })();
+
+  const isQuarantineSelected = selected?.kind === "quarantine";
 
   return (
     <BottomSheet
@@ -266,14 +348,10 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
         step === "create"
           ? "Crear ingrediente nuevo"
           : step === "form"
-          ? selectedIngredient?.name ?? "Añadir ingrediente"
+          ? selected?.name ?? "Añadir ingrediente"
           : "Añadir ingrediente"
       }
-      subtitle={
-        step === "form"
-          ? selectedIngredient?.ingredient_categories?.name
-          : undefined
-      }
+      subtitle={step === "form" ? selected?.category_name : undefined}
       footer={
         step === "form" ? (
           <div className="flex items-center gap-3">
@@ -339,28 +417,37 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
             className="flex flex-col rounded-md border border-line bg-surface"
           >
             {searching ? (
-              <li className="px-4 py-3 text-caption text-ink-secondary">
-                Buscando…
-              </li>
+              <li className="px-4 py-3 text-caption text-ink-secondary">Buscando…</li>
             ) : (results || []).length === 0 && query.trim() === "" ? (
               <li className="px-4 py-6 text-center text-caption text-ink-secondary">
                 Empieza a escribir para buscar.
               </li>
             ) : (
               (results || []).map((r) => (
-                <li key={r.id} className="border-b border-line last:border-b-0">
+                <li
+                  key={`${r._kind}-${r.id}`}
+                  className="border-b border-line last:border-b-0"
+                >
                   <button
                     type="button"
-                    onClick={() => handlePickIngredient(r)}
+                    onClick={() => handlePickResult(r)}
                     data-testid={`add-pantry-result-${r.id}`}
                     className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-brand-light"
                   >
-                    <span className="flex flex-col">
-                      <span className="text-body text-ink">{r.name}</span>
-                      <span className="text-caption text-ink-secondary">
-                        {r.ingredient_categories?.name ?? ""}
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-body text-ink">{r.name}</span>
+                      <span className="truncate text-caption text-ink-secondary">
+                        {r.category_name}
                       </span>
                     </span>
+                    {r._kind === "quarantine" ? (
+                      <span
+                        data-testid={`add-pantry-result-pending-pill-${r.id}`}
+                        className="ml-2 inline-flex h-5 flex-shrink-0 items-center rounded-full bg-brand-light px-2 text-[10px] font-semibold uppercase tracking-wide text-brand"
+                      >
+                        Pendiente
+                      </span>
+                    ) : null}
                   </button>
                 </li>
               ))
@@ -456,8 +543,8 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
           </fieldset>
 
           <p className="rounded-md border border-line bg-surface-secondary px-3 py-2 text-caption text-ink-secondary">
-            Tu ingrediente será revisado por el equipo. Mientras tanto, podrás
-            usarlo en tus recetas privadas.
+            Tu ingrediente será revisado por el equipo. Mientras tanto, puedes
+            añadirlo a tu despensa y usarlo en tus recetas privadas.
           </p>
 
           {errorMsg ? (
@@ -469,16 +556,6 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
               {errorMsg}
             </p>
           ) : null}
-
-          {infoMsg ? (
-            <p
-              role="status"
-              data-testid="add-pantry-create-info"
-              className="rounded-md border border-line bg-surface-secondary px-3 py-2 text-caption text-ink"
-            >
-              {infoMsg}
-            </p>
-          ) : null}
         </div>
       ) : null}
 
@@ -488,7 +565,7 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
           <button
             type="button"
             onClick={() => {
-              setSelectedIngredient(null);
+              setSelected(null);
               setStep("search");
             }}
             data-testid="add-pantry-form-back"
@@ -497,6 +574,21 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
             <ArrowLeft className="h-3.5 w-3.5" />
             Cambiar ingrediente
           </button>
+
+          {isQuarantineSelected ? (
+            <p
+              data-testid="add-pantry-form-pending-banner"
+              className="flex items-start gap-2 rounded-md border border-line bg-brand-light px-3 py-2 text-caption text-ink"
+            >
+              <span className="mt-0.5 inline-flex h-4 items-center rounded-full bg-brand px-1.5 text-[9px] font-semibold uppercase tracking-wide text-white">
+                Pendiente
+              </span>
+              <span>
+                Este ingrediente espera validación. Puedes añadirlo a tu despensa
+                mientras tanto.
+              </span>
+            </p>
+          ) : null}
 
           <div className="flex items-end gap-3">
             <label className={`flex flex-1 flex-col gap-1.5 ${isBasic ? "opacity-50" : ""}`}>
@@ -537,6 +629,16 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
               </select>
             </label>
           </div>
+
+          {isQuarantineSelected && !isBasic ? (
+            <p
+              data-testid="add-pantry-quarantine-unit-help"
+              className="text-caption text-ink-secondary"
+            >
+              Unidad base. Más unidades disponibles cuando el admin valide este
+              ingrediente.
+            </p>
+          ) : null}
 
           <fieldset className="flex flex-col gap-1.5">
             <legend className="text-caption font-medium text-ink-secondary">Ubicación</legend>

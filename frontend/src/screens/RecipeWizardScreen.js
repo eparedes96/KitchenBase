@@ -52,6 +52,10 @@ export default function RecipeWizardScreen({ mode = "new" }) {
   // Close confirmation
   const [confirmClose, setConfirmClose] = useState(false);
 
+  // Duplicate-title warning dialog (D-030).
+  // Shape: { open, step, displayTitle, proceed }
+  const [duplicateDialog, setDuplicateDialog] = useState(null);
+
   // -------- Bootstrap --------
   useEffect(() => {
     let cancelled = false;
@@ -146,10 +150,30 @@ export default function RecipeWizardScreen({ mode = "new" }) {
   }, [mode, routeRecipeId]);
 
   // -------- Step 1 → INSERT or UPDATE title --------
-  const handleStep1Next = async () => {
-    setErrorMsg("");
-    const trimmed = (title || "").trim();
-    if (!trimmed) return;
+  /**
+   * Check whether the user already has a NON-DRAFT recipe whose title matches
+   * the given input after trim+lowercase comparison (accent-sensitive).
+   * Excludes the current recipe (so resuming a draft doesn't match itself).
+   */
+  const checkDuplicateTitle = useCallback(
+    async (trimmed) => {
+      if (!user || !trimmed) return false;
+      let q = supabase
+        .from("recipes")
+        .select("id, title")
+        .eq("user_id", user.id)
+        .eq("is_draft", false);
+      if (recipeId) q = q.neq("id", recipeId);
+      const { data } = await q;
+      const target = trimmed.toLowerCase();
+      return (data || []).some(
+        (r) => (r.title || "").trim().toLowerCase() === target
+      );
+    },
+    [user, recipeId]
+  );
+
+  const persistStep1 = async (trimmed) => {
     setBusy(true);
     try {
       if (recipeId == null) {
@@ -184,6 +208,24 @@ export default function RecipeWizardScreen({ mode = "new" }) {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleStep1Next = async () => {
+    setErrorMsg("");
+    const trimmed = (title || "").trim();
+    if (!trimmed) return;
+    const duplicate = await checkDuplicateTitle(trimmed);
+    if (duplicate) {
+      track("recipe_duplicate_title_warning_shown", { step: 1 });
+      setDuplicateDialog({
+        open: true,
+        step: 1,
+        displayTitle: title,
+        proceed: () => persistStep1(trimmed),
+      });
+      return;
+    }
+    await persistStep1(trimmed);
   };
 
   // -------- Step 2 --------
@@ -336,13 +378,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
   };
 
   // -------- Step 5 final save --------
-  const handleFinalSave = async () => {
-    setErrorMsg("");
-    const cleanSteps = (stepsText || [])
-      .map((s) => (s || "").trim())
-      .filter((s) => s.length > 0);
-    if (cleanSteps.length === 0) return;
-
+  const persistFinalSave = async (cleanSteps) => {
     setBusy(true);
 
     // 1) replace previous recipe_steps (idempotent on re-saves)
@@ -418,6 +454,52 @@ export default function RecipeWizardScreen({ mode = "new" }) {
       has_pending_ingredients: hasPending,
     });
     navigate("/my-recipes", { replace: true });
+  };
+
+  const handleFinalSave = async () => {
+    setErrorMsg("");
+    const cleanSteps = (stepsText || [])
+      .map((s) => (s || "").trim())
+      .filter((s) => s.length > 0);
+    if (cleanSteps.length === 0) return;
+    const trimmedTitle = (title || "").trim();
+    const duplicate = await checkDuplicateTitle(trimmedTitle);
+    if (duplicate) {
+      track("recipe_duplicate_title_warning_shown", { step: 5 });
+      setDuplicateDialog({
+        open: true,
+        step: 5,
+        displayTitle: title,
+        proceed: () => persistFinalSave(cleanSteps),
+      });
+      return;
+    }
+    await persistFinalSave(cleanSteps);
+  };
+
+  // -------- Duplicate-title dialog handlers --------
+  const handleDuplicateConfirm = async () => {
+    if (!duplicateDialog) return;
+    const { step: warnStep, proceed } = duplicateDialog;
+    track("recipe_duplicate_title_warning_resolved", {
+      action: "save_anyway",
+      step: warnStep,
+    });
+    setDuplicateDialog(null);
+    if (typeof proceed === "function") await proceed();
+  };
+
+  const handleDuplicateCancel = () => {
+    if (!duplicateDialog) return;
+    const warnStep = duplicateDialog.step;
+    track("recipe_duplicate_title_warning_resolved", {
+      action: "edit_title",
+      step: warnStep,
+    });
+    setDuplicateDialog(null);
+    // If the warning surfaced on step 5, send the user back to step 1
+    // so they can edit the title (Step1Title auto-focuses its input).
+    if (warnStep === 5) setStep(1);
   };
 
   // -------- Close handler --------
@@ -540,6 +622,21 @@ export default function RecipeWizardScreen({ mode = "new" }) {
         onConfirm={handleConfirmExit}
         onCancel={() => setConfirmClose(false)}
         testId="wizard-confirm-exit"
+      />
+
+      <ConfirmDialog
+        open={!!duplicateDialog?.open}
+        title="Ya tienes una receta llamada así"
+        description={
+          duplicateDialog
+            ? `Tienes una receta titulada «${duplicateDialog.displayTitle}». ¿Quieres guardar esta de todos modos?`
+            : undefined
+        }
+        confirmLabel="Guardar igualmente"
+        cancelLabel="Editar título"
+        onConfirm={handleDuplicateConfirm}
+        onCancel={handleDuplicateCancel}
+        testId="wizard-duplicate-title"
       />
     </MobileFrame>
   );

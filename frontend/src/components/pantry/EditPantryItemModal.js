@@ -38,7 +38,7 @@ export function EditPantryItemModal({ open, item, onClose, onSaved, onDeleted })
 
   // Load available units for the chosen ingredient
   useEffect(() => {
-    if (!open || !item?.ingredient_id) {
+    if (!open || !item) {
       setAvailableUnits([]);
       return;
     }
@@ -50,22 +50,27 @@ export function EditPantryItemModal({ open, item, onClose, onSaved, onDeleted })
         .select("id, name, symbol")
         .eq("name", baseUnitName)
         .single();
-      const { data: convs } = await supabase
-        .from("unit_conversions")
-        .select("unit_id, units!inner(id, name, symbol)")
-        .eq("ingredient_id", item.ingredient_id);
+
       const list = [];
       if (baseRow) list.push(baseRow);
-      (convs || []).forEach((c) => {
-        if (c.units && c.units.id !== baseRow?.id) {
-          list.push({ id: c.units.id, name: c.units.name, symbol: c.units.symbol });
-        }
-      });
+
+      // Only catalog ingredients have unit_conversions; quarantine ones don't
+      if (item.ingredient_id) {
+        const { data: convs } = await supabase
+          .from("unit_conversions")
+          .select("unit_id, units!inner(id, name, symbol)")
+          .eq("ingredient_id", item.ingredient_id);
+        (convs || []).forEach((c) => {
+          if (c.units && c.units.id !== baseRow?.id) {
+            list.push({ id: c.units.id, name: c.units.name, symbol: c.units.symbol });
+          }
+        });
+      }
       setAvailableUnits(list);
       if (!unitId) setUnitId(baseRow?.id ?? "");
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, item?.ingredient_id]);
+  }, [open, item?.ingredient_id, item?.user_ingredient_id]);
 
   const canSave = (() => {
     if (isBasic) return true;
@@ -106,7 +111,10 @@ export function EditPantryItemModal({ open, item, onClose, onSaved, onDeleted })
       );
       return;
     }
-    track("pantry_item_edited", { ingredient_id: item.ingredient_id });
+    track("pantry_item_edited", {
+      ingredient_id: item.ingredient_id ?? null,
+      user_ingredient_id: item.user_ingredient_id ?? null,
+    });
     onSaved?.();
     onClose?.();
   };
@@ -126,7 +134,10 @@ export function EditPantryItemModal({ open, item, onClose, onSaved, onDeleted })
       );
       return;
     }
-    track("pantry_item_deleted", { ingredient_id: item.ingredient_id });
+    track("pantry_item_deleted", {
+      ingredient_id: item.ingredient_id ?? null,
+      user_ingredient_id: item.user_ingredient_id ?? null,
+    });
     onDeleted?.();
     onClose?.();
   };
@@ -206,6 +217,16 @@ export function EditPantryItemModal({ open, item, onClose, onSaved, onDeleted })
               </select>
             </label>
           </div>
+
+          {item?.is_quarantine && !isBasic ? (
+            <p
+              data-testid="edit-pantry-quarantine-unit-help"
+              className="text-caption text-ink-secondary"
+            >
+              Unidad base. Más unidades disponibles cuando el admin valide este
+              ingrediente.
+            </p>
+          ) : null}
 
           <fieldset className="flex flex-col gap-1.5">
             <legend className="text-caption font-medium text-ink-secondary">Ubicación</legend>

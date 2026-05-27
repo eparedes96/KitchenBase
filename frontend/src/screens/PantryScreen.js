@@ -36,7 +36,7 @@ export default function PantryScreen() {
     const { data, error } = await supabase
       .from("pantry_items")
       .select(
-        "id, ingredient_id, quantity, unit_id, location, is_basic, updated_at, ingredients!inner(id, name, base_unit, category_id, ingredient_categories!inner(id, name, sort_order)), units(id, name, symbol)"
+        "id, ingredient_id, user_ingredient_id, quantity, unit_id, location, is_basic, updated_at, ingredients(id, name, base_unit, category_id, ingredient_categories(id, name, sort_order)), user_ingredients(id, name, base_unit), units(id, name, symbol)"
       )
       .eq("user_id", user.id);
     if (error) {
@@ -46,27 +46,38 @@ export default function PantryScreen() {
       setLoading(false);
       return;
     }
-    const flat = (data || []).map((row) => ({
-      id: row.id,
-      ingredient_id: row.ingredient_id,
-      quantity: row.quantity,
-      unit_id: row.unit_id,
-      location: row.location,
-      is_basic: row.is_basic,
-      updated_at: row.updated_at,
-      ingredient: {
-        id: row.ingredients.id,
-        name: row.ingredients.name,
-        base_unit: row.ingredients.base_unit,
-        category_id: row.ingredients.category_id,
-        category_name: row.ingredients.ingredient_categories?.name,
-        category_sort: row.ingredients.ingredient_categories?.sort_order,
-      },
-      unit: row.units
-        ? { id: row.units.id, name: row.units.name, symbol: row.units.symbol }
-        : null,
-    }));
-    flat.sort((a, b) => a.ingredient.name.localeCompare(b.ingredient.name, "es"));
+    const flat = (data || []).map((row) => {
+      const isQuarantine = !!row.user_ingredients;
+      const src = row.ingredients ?? row.user_ingredients ?? {};
+      return {
+        id: row.id,
+        ingredient_id: row.ingredient_id,
+        user_ingredient_id: row.user_ingredient_id,
+        is_quarantine: isQuarantine,
+        quantity: row.quantity,
+        unit_id: row.unit_id,
+        location: row.location,
+        is_basic: row.is_basic,
+        updated_at: row.updated_at,
+        ingredient: {
+          id: src.id,
+          name: src.name,
+          base_unit: src.base_unit,
+          category_id: row.ingredients?.category_id ?? null,
+          category_name:
+            row.ingredients?.ingredient_categories?.name ??
+            (isQuarantine ? "Pendiente de validación" : null),
+          category_sort:
+            row.ingredients?.ingredient_categories?.sort_order ?? null,
+        },
+        unit: row.units
+          ? { id: row.units.id, name: row.units.name, symbol: row.units.symbol }
+          : null,
+      };
+    });
+    flat.sort((a, b) =>
+      (a.ingredient.name || "").localeCompare(b.ingredient.name || "", "es")
+    );
     setItems(flat);
     setLoading(false);
   }, [user]);
@@ -121,6 +132,11 @@ export default function PantryScreen() {
         key = it.location;
         label = LOCATION_LABEL[it.location];
         sortKey = LOCATION_ORDER.indexOf(it.location);
+      } else if (it.is_quarantine) {
+        // Quarantine ingredients have no real category; group them together
+        key = "__quarantine__";
+        label = "Pendientes de validación";
+        sortKey = Number.MAX_SAFE_INTEGER;
       } else {
         key = it.ingredient.category_id;
         label = it.ingredient.category_name ?? "Sin categoría";
@@ -304,9 +320,11 @@ export default function PantryScreen() {
         onCancel={() => setDeleteItem(null)}
         onConfirm={async () => {
           if (!deleteItem) return;
-          const ing_id = deleteItem.ingredient_id;
           await supabase.from("pantry_items").delete().eq("id", deleteItem.id);
-          track("pantry_item_deleted", { ingredient_id: ing_id });
+          track("pantry_item_deleted", {
+            ingredient_id: deleteItem.ingredient_id ?? null,
+            user_ingredient_id: deleteItem.user_ingredient_id ?? null,
+          });
           setDeleteItem(null);
           fetchItems();
         }}
