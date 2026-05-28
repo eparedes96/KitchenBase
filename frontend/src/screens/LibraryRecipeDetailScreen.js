@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -9,12 +9,15 @@ import {
   ShoppingCart,
   Utensils,
   AlertTriangle,
+  Check,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/context/AuthContext";
 import { FullScreenLoader } from "@/components/common/FullScreenLoader";
 import { SemaphoreBanner } from "@/components/library/SemaphoreIndicator";
 import { formatQuantity } from "@/lib/textUtils";
+import { convertToBase } from "@/lib/unitConversion";
+import { track } from "@/lib/analytics";
 
 /**
  * LIB-002 — Detalle de receta (Biblioteca).
@@ -257,33 +260,164 @@ function StepsList({ steps }) {
 }
 
 /**
- * The two "Próximamente" CTAs at the bottom of LIB-002.
- * Out of scope for P4; will become real flows in later prompts (Shopping
- * List and Cooking History).
+ * Bottom-of-screen actions on LIB-002.
+ *
+ * - "Añadir lo que falta a la Lista de la Compra" is shown ONLY when the
+ *   recipe has missing ingredients (per Section 4.1 of P5). It writes the
+ *   missing CATALOG entries to the user's shopping list, applying the
+ *   consolidation rule (Section 4.2): sum into an existing UNCHECKED row,
+ *   never touch CHECKED rows.
+ *
+ * - Quarantine ingredients (`user_ingredient_id` set / `is_pending = true`)
+ *   are SKIPPED because `shopping_list_items.ingredient_id` is NOT
+ *   nullable. A calm explanatory caption is rendered when any were
+ *   skipped (Section 4.3).
+ *
+ * - "He cocinado esto" stays disabled / "Próximamente". Its flow (MOD-003)
+ *   is out of scope for P5.
  */
-function ComingSoonActions() {
+function RecipeActions({ recipeId, missingIngredients, recipeIngredients }) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState("");
+  const toastTimerRef = useRef(null);
+  const [skippedCaption, setSkippedCaption] = useState("");
+  const [lastAdded, setLastAdded] = useState(0);
+
+  const showToast = useCallback((msg) => {
+    setToast(msg);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(""), 3500);
+  }, []);
+
+  // Catalog vs quarantine partition based on the engine's response shape.
+  const catalogMissing = (missingIngredients || []).filter(
+    (m) => m && m.ingredient_id && !m.is_pending && !m.user_ingredient_id
+  );
+  const pendingMissing = (missingIngredients || []).filter(
+    (m) => m && (m.is_pending || m.user_ingredient_id)
+  );
+
+  const hasMissing = (missingIngredients || []).length > 0;
+
+  /**
+   * Resolve the quantity (in base unit) to push to the shopping list for a
+   * given missing-ingredient entry. The engine already provides this when
+   * `reason === 'insufficient_quantity'`. For `not_in_pantry` we read the
+   * recipe's required quantity for this ingredient and convert via the
+   * server-side kb_convert_to_base function.
+   */
+  const resolveBaseQty = async (mi) => {
+    if (mi.missing_quantity != null) {
+      const n = Number(mi.missing_quantity);
+      return Number.isFinite(n) ? n : null;
+    }
+    const ri = (recipeIngredients || []).find(
+      (r) => r.ingredient_id === mi.ingredient_id
+    );
+    if (!ri) return null;
+    const base = await convertToBase(ri.ingredient_id, ri.quantity, ri.unit_id);
+    return base != null ? Number(base) : null;
+  };
+
+  const handleAddMissingToList = async () => {
+    if (!user || !recipeId || submitting) return;
+    setSubmitting(true);
+    setSkippedCaption("");
+    setLastAdded(0);
+
+    let added = 0;
+    let skippedUnresolved = 0;
+
+    for (const mi of catalogMissing) {
+      const baseQty = await resolveBaseQty(mi);
+      if (baseQty == null || baseQty <= 0) {
+        skippedUnresolved += 1;
+        continue;
+      }
+      // Consolidate with an existing UNCHECKED row, otherwise insert fresh.
+      const { data: existing, error: readErr } = await supabase
+        .from("shopping_list_items")
+        .select("id, needed_quantity")
+        .eq("user_id", user.id)
+        .eq("ingredient_id", mi.ingredient_id)
+        .eq("is_checked", false)
+        .maybeSingle();
+      if (readErr) {
+        // eslint-disable-next-line no-console
+        console.error("[lib-detail] shopping read failed", readErr);
+        continue;
+      }
+      if (existing) {
+        const newQty = Number(existing.needed_quantity ?? 0) + baseQty;
+        const { error: updErr } = await supabase
+          .from("shopping_list_items")
+          .update({ needed_quantity: newQty })
+          .eq("id", existing.id);
+        if (!updErr) added += 1;
+      } else {
+        const { error: insErr } = await supabase
+          .from("shopping_list_items")
+          .insert({
+            user_id: user.id,
+            ingredient_id: mi.ingredient_id,
+            needed_quantity: baseQty,
+            is_checked: false,
+            added_from_recipe_id: recipeId,
+          });
+        if (!insErr) added += 1;
+      }
+    }
+
+    track("missing_ingredients_added_to_list", {
+      recipe_id: recipeId,
+      added_count: added,
+      skipped_pending_count: pendingMissing.length,
+    });
+
+    setLastAdded(added);
+
+    if (added === 0 && pendingMissing.length > 0) {
+      setSkippedCaption(
+        "Algunos ingredientes pendientes de validar no se pueden añadir a la lista todavía."
+      );
+    } else if (added > 0 && pendingMissing.length > 0) {
+      setSkippedCaption(
+        "Algunos ingredientes pendientes de validar no se pueden añadir a la lista todavía."
+      );
+      showToast("Añadido a tu lista de la compra");
+    } else if (added > 0) {
+      showToast("Añadido a tu lista de la compra");
+    } else if (skippedUnresolved > 0) {
+      showToast("No se pudo calcular la cantidad para algunos ingredientes.");
+    }
+
+    setSubmitting(false);
+  };
+
   return (
     <section
       data-testid="library-recipe-actions"
       className="flex flex-col gap-2 pt-2"
     >
-      <button
-        type="button"
-        disabled
-        aria-disabled="true"
-        data-testid="library-recipe-shopping-cta"
-        title="Próximamente"
-        className="flex h-11 w-full cursor-not-allowed items-center justify-between gap-2 rounded-md border border-line bg-surface-secondary px-4 text-body text-ink-secondary"
-      >
-        <span className="flex items-center gap-2">
+      {hasMissing ? (
+        <button
+          type="button"
+          onClick={handleAddMissingToList}
+          disabled={submitting}
+          data-testid="library-recipe-shopping-cta"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-[#B86848] disabled:cursor-not-allowed disabled:opacity-60"
+        >
           <ShoppingCart className="h-4 w-4" />
-          Añadir lo que falta a la Lista de la Compra
-        </span>
-        <span className="rounded-full bg-brand-light px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand">
-          Próximamente
-        </span>
-      </button>
+          {submitting
+            ? "Añadiendo…"
+            : "Añadir lo que falta a la Lista de la Compra"}
+        </button>
+      ) : null}
 
+      {/* "He cocinado esto" remains disabled until MOD-003 is built (out of scope for P5). */}
       <button
         type="button"
         disabled
@@ -300,6 +434,44 @@ function ComingSoonActions() {
           Próximamente
         </span>
       </button>
+
+      {skippedCaption ? (
+        <p
+          data-testid="library-recipe-skipped-pending-caption"
+          className="text-caption text-ink-secondary"
+        >
+          {skippedCaption}
+        </p>
+      ) : null}
+
+      {lastAdded > 0 ? (
+        <div className="flex items-center justify-between gap-3 rounded-md border border-line bg-brand-light px-3 py-2">
+          <span className="flex items-center gap-2 text-caption text-ink">
+            <Check className="h-4 w-4 text-brand" />
+            {lastAdded === 1
+              ? "1 ingrediente añadido."
+              : `${lastAdded} ingredientes añadidos.`}
+          </span>
+          <button
+            type="button"
+            onClick={() => navigate("/shopping-list")}
+            data-testid="library-recipe-go-to-list"
+            className="flex h-8 items-center justify-center rounded-md bg-brand px-3 text-caption font-semibold text-white transition-colors hover:bg-[#B86848]"
+          >
+            Ver lista
+          </button>
+        </div>
+      ) : null}
+
+      {toast ? (
+        <div
+          role="status"
+          data-testid="library-recipe-shopping-toast"
+          className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-md border border-line bg-surface px-4 py-2 text-caption text-ink animate-fade-in"
+        >
+          {toast}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -553,8 +725,13 @@ export default function LibraryRecipeDetailScreen() {
         <StepsList steps={steps} />
       </section>
 
-      {/* Disabled "Próximamente" actions (Shopping List + Cooking History) */}
-      <ComingSoonActions />
+      {/* Actions: shopping CTA enabled when there are missing ingredients;
+          "He cocinado esto" remains disabled until MOD-003 ships. */}
+      <RecipeActions
+        recipeId={recipe.id}
+        missingIngredients={missingIngredients}
+        recipeIngredients={ingredients}
+      />
     </div>
   );
 }

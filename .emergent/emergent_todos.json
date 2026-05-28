@@ -1,26 +1,38 @@
 [
   {
-    "content": "Explorar estado actual: pantry/ingredients/units/recipes del usuario test",
+    "content": "Explorar pantry modals + BottomSheet + supabase patterns",
     "status": "completed"
   },
   {
-    "content": "Crear seed script idempotente con 3 recetas adicionales (GREEN, YELLOW, GREEN+pending)",
+    "content": "Verificar estructura shopping_list_items",
     "status": "completed"
   },
   {
-    "content": "Ejecutar seed y verificar via compute_library_status que los 4 estados aparezcan correctamente",
+    "content": "Crear ShoppingListScreen.js (SHO-001) + ShoppingListItem + EmptyState",
     "status": "completed"
   },
   {
-    "content": "Verificación UI (LIB-001 + LIB-002) de los 9 items del prompt",
+    "content": "Crear ConfirmBoughtModal.js (MOD-004) con escritura a pantry + mark item bought",
     "status": "completed"
   },
   {
-    "content": "Aplicar test-id namespacing opcional para resolver el prefix-collision",
+    "content": "Crear AddShoppingItemModal.js (MOD-005) catalog-only con consolidación",
     "status": "completed"
   },
   {
-    "content": "Documentar plan.md y crear script de cleanup",
+    "content": "Modificar LibraryRecipeDetailScreen.js: habilitar botón shopping; mantener He cocinado esto disabled",
     "status": "completed"
+  },
+  {
+    "content": "Añadir 5 PostHog events (verificados todos disparando con props correctas)",
+    "status": "completed"
+  },
+  {
+    "content": "Verificar manualmente con screenshots los 12 items del checklist (Sec 7) - todos PASS",
+    "status": "completed"
+  },
+  {
+    "content": "Llamar testing_agent_v3 para validar E2E",
+    "status": "in_progress"
   }
 ]

@@ -269,29 +269,63 @@ test user's library, so cross-color behavior (green / yellow / green+pending)
 was never exercised._
 
 _Test data seeded (idempotent, all tagged `P4.1-seed`):_
-- `tests/seed_p4_1_multicolor.py` — seeds 3 recipes + necessary pantry rows:
-  - **Ensalada Verde P4.1-seed** → GREEN (Lechuga key + Aceite/Sal as is_basic).
-  - **Pollo con Arroz P4.1-seed** → YELLOW (Pechuga key + Arroz key in pantry; Cebolla non-key NOT in pantry).
-  - **Yogur con Miel P4.1-seed** → GREEN + pending (Yogur key in pantry; quarantine ingredient "Miel P4.1-seed" in pantry; `has_pending_ingredients=true`).
-- `tests/seed_p4_1_cleanup.py` — removes the 3 recipes + the quarantine ingredient. Pass `--include-pantry` to also remove the catalog pantry rows.
+- `tests/seed_p4_1_multicolor.py` — seeds 3 recipes + necessary pantry rows.
+- `tests/seed_p4_1_cleanup.py` — removes the 3 recipes + the quarantine ingredient.
 
-_Verification results (engine + UI, all PASS):_
-1. Cross-color ordering — strict green→yellow→orange, alphabetical within. ✅
-2. Green card omits "Faltan N" line. ✅
-3. Yellow card shows correct singular ("Falta 1 ingrediente" for Cebolla). ✅
-4. Green-with-pending stays GREEN and shows the subtle "Aproximada" marker. ✅
-5. LIB-002 GREEN → "Puedes cocinar esto ahora", no "Falta" labels, no row accents. ✅
-6. LIB-002 YELLOW → yellow banner, only the non-key Cebolla row highlighted in yellow. ✅
-7. LIB-002 ORANGE → orange banner, missing KEY rendered in orange with missing quantity ("Te faltan 100 g"). ✅
-8. `library_viewed` fires exactly once with per-color counts: `{recipe_count:5, green_count:2, yellow_count:1, orange_count:2}`. ✅
-9. Exactly one root card per recipe (5 buttons for 5 library rows). Test-id collision (button + dot + missing-span sharing prefix `library-card-`) resolved by namespacing inner elements as `library-dot-…`, `library-approx-…`, `library-missing-…`. No card returns a null/blank status. ✅
-
-_Trivial code adjustment (Section 3 of P4.1):_
-- `LibraryRecipeCard.js`: inner test-ids renamed (`library-dot-…`, `library-approx-…`, `library-missing-…`) so `data-testid^="library-card-"` selects exactly one element per recipe.
+All 9 verification items PASSED. Trivial `LibraryRecipeCard.js` test-id namespacing applied.
 
 ---
 
-### Phase 8 — Future prompts (Out of scope now)
+### Phase 8 — Lista de la Compra (SHO-001 + MOD-004 + MOD-005 + LIB-002 CTA) ✅ Completed
+_User stories_
+1. As an authenticated user, I can open the **Lista de la Compra** tab and see my items (unchecked first, checked at the bottom). ✅
+2. As a user, an empty list shows an explanatory message + a "Ir a mi Biblioteca" CTA. ✅
+3. As a user, tapping a checkbox opens **MOD-004 (Confirmar Cantidad Comprada)** pre-filled with the needed quantity. ✅
+4. As a user, confirming MOD-004 (a) ADDS the bought quantity to my pantry (creating or incrementing the catalog row), and (b) marks the item bought (`is_checked=true`, `bought_quantity`, `checked_at`). ✅
+5. As a user, manually adding an item via **MOD-005** searches the catalog only — quarantine ingredients are not offered here. ✅
+6. As a user, "Compartir lista" opens the OS native share where available, or copies a readable plain-text list to the clipboard otherwise. ✅
+7. As a user, "Vaciar lista" requires explicit confirmation before deleting all my items. ✅
+8. As a user on **LIB-002**, the previously disabled "Añadir lo que falta a la Lista de la Compra" CTA is now active when the recipe has missing ingredients; it writes the missing CATALOG entries to my list, applying the consolidation rule. ✅
+9. As a user, when a recipe's missing set includes a quarantine ingredient, that one is **skipped** and a calm caption explains it ("Algunos ingredientes pendientes de validar no se pueden añadir a la lista todavía."). No schema violation, no error. ✅
+10. As a user, "He cocinado esto" remains disabled / "Próximamente" — out of scope for P5 (MOD-003). ✅
+
+_Critical data-model constraint observed_
+- `shopping_list_items.ingredient_id` is **NOT NULL** and references the global catalog only. Quarantine ingredients (`user_ingredient_id`) cannot be added — they are skipped at the source.
+- Quantities are stored in the ingredient's **base unit**. Conversions go through the shared server-side `kb_convert_to_base` function (no client-side reimplementation).
+
+_Files added_
+- `frontend/src/screens/ShoppingListScreen.js` — SHO-001 (replaced the placeholder). ✅
+- `frontend/src/components/shopping/ShoppingListItem.js` — single-row component. ✅
+- `frontend/src/components/shopping/EmptyShoppingListState.js` — empty-state. ✅
+- `frontend/src/components/shopping/ConfirmBoughtModal.js` — MOD-004. ✅
+- `frontend/src/components/shopping/AddShoppingItemModal.js` — MOD-005. ✅
+- `frontend/src/lib/unitConversion.js` — `convertToBase()` + `loadIngredientUnits()` helpers calling `kb_convert_to_base` RPC. ✅
+
+_Files modified_
+- `frontend/src/screens/LibraryRecipeDetailScreen.js` — `ComingSoonActions` → `RecipeActions`: shopping CTA active when there are missing ingredients; "He cocinado esto" untouched (still disabled). ✅
+
+_Consolidation rule (verified live)_
+- An UNCHECKED row for the same `ingredient_id` is **summed**, not duplicated.
+- A CHECKED row is never modified — a new unchecked row is created instead.
+- Manual add (MOD-005) and "Añadir lo que falta" (LIB-002) both share this rule.
+- Live evidence: before "50 g Pechuga de pollo (unchecked)" + Paella missing 300 g → after "350 g Pechuga de pollo (unchecked)" — one row, summed.
+
+_Critical full loop verified end-to-end_
+- LIB-002 (orange) → CTA → SHO-001 (50 g Pechuga) → MOD-004 (confirm 100 g) → pantry 400→500 g → engine recomputes Paella → **green**. The shopping list closes the loop back to the pantry.
+
+_Analytics events_
+- `shopping_list_viewed` — fired on SHO-001 mount with `{ item_count }`. ✅
+- `shopping_item_added_manual` — fired on MOD-005 add with `{ ingredient_id }`. ✅
+- `shopping_item_checked` — fired on MOD-004 confirm with `{ ingredient_id }`. ✅
+- `shopping_list_cleared` — fired on "Vaciar lista" confirm with `{ cleared_count }`. ✅
+- `missing_ingredients_added_to_list` — fired on LIB-002 CTA with `{ recipe_id, added_count, skipped_pending_count }`. ✅
+
+_Out of scope for P5 (deliberately deferred)_
+- MOD-003 / "He cocinado esto" cooking history.
+
+---
+
+### Phase 9 — Future prompts (Out of scope now)
 - **REC-003** full recipe detail screen (display nutrition, ingredients, steps, key ingredients, etc.)
 - Editing already-completed recipes (private/proposed/public flows per decision D-028)
 - Biblioteca (saved community recipes)
