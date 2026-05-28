@@ -17,6 +17,7 @@ import MyRecipesScreen from "@/screens/MyRecipesScreen";
 import RecipeWizardScreen from "@/screens/RecipeWizardScreen";
 import RecipeDetailScreen from "@/screens/RecipeDetailScreen";
 import LibraryScreen from "@/screens/LibraryScreen";
+import LibraryRecipeDetailScreen from "@/screens/LibraryRecipeDetailScreen";
 import ShoppingListScreen from "@/screens/ShoppingListScreen";
 import DiscoverScreen from "@/screens/DiscoverScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
@@ -84,6 +85,7 @@ function App() {
               <Route path="/my-recipes" element={<MyRecipesScreen />} />
               <Route path="/my-recipes/:id" element={<RecipeDetailScreen />} />
               <Route path="/library" element={<LibraryScreen />} />
+              <Route path="/library/:id" element={<LibraryRecipeDetailScreen />} />
               <Route path="/shopping-list" element={<ShoppingListScreen />} />
               <Route path="/discover" element={<DiscoverScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />

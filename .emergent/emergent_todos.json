@@ -1,22 +1,22 @@
 [
   {
-    "content": "Create RecipeDetailScreen full implementation",
+    "content": "Crear LibraryRecipeDetailScreen.js (LIB-002): cargar receta, llamar compute_recipe_status RPC, mostrar SemaphoreBanner, resaltar ingredientes faltantes, nutrition card, steps, botones disabled 'Próximamente'",
     "status": "completed"
   },
   {
-    "content": "Wire wizard final save to navigate to /my-recipes/:id",
+    "content": "Añadir ruta /library/:id en App.js apuntando a LibraryRecipeDetailScreen",
     "status": "completed"
   },
   {
-    "content": "Wire 'Editar receta' to /my-recipes/edit/:id (note: completed-recipe edit still shows ComingSoon per existing wizard behavior)",
+    "content": "Verificar lint/build y comprobar con screenshot que LIB-001 navega a LIB-002 correctamente",
     "status": "completed"
   },
   {
-    "content": "Add 4 PostHog events: recipe_detail_viewed, recipe_added_to_library, recipe_proposed_to_catalog, recipe_deleted",
+    "content": "Actualizar plan.md con la nueva fase P4 (LIB-001 + LIB-002) marcada como completada",
     "status": "completed"
   },
   {
-    "content": "Testing_agent_v3 verification: 100% pass on 21 scenarios",
-    "status": "completed"
+    "content": "Llamar testing_agent_v3 (frontend only) para validar flujos end-to-end del semáforo desde Library",
+    "status": "in_progress"
   }
 ]

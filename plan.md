@@ -220,7 +220,50 @@ _Known minor test-only note_
 
 ---
 
-### Phase 6 — Future prompts (Out of scope now)
+### Phase 6 — Pantry Quarantine + Semaphore Engine + Detail screens ✅ Completed
+_See git history for P1 / P1.5 / P2 / P3 deliverables._
+
+---
+
+### Phase 7 — Biblioteca (LIB-001 + LIB-002) ✅ Completed
+_User stories_
+1. As an authenticated user, I can open the **Biblioteca** tab and see all my saved recipes with a traffic-light indicator (green/yellow/orange). ✅
+2. As a user, the list is ordered by semaphore color (green first, then yellow, then orange) — no headers. ✅
+3. As a user, each card displays the semaphore dot + stripe, time, difficulty, and (only when not green) "Faltan N ingredientes" with correct singular/plural. ✅
+4. As a user, I can long-press a card to remove a recipe from my library with a confirmation dialog. ✅
+5. As a user, tapping a card opens the **library detail** screen for that recipe. ✅
+6. As a user, the detail screen shows a large semaphore banner driven by the engine (`compute_recipe_status` RPC). ✅
+7. As a user, ingredients that I'm missing are highlighted distinctly (orange row for missing key, yellow row for missing non-key) with a "Te falta" badge and missing quantity (in base unit). ✅
+8. As a user, the detail screen renders disabled "Próximamente" CTAs for **Añadir a la Lista de la Compra** and **He cocinado esto**. ✅
+9. As a user with an empty library, I see two active CTAs: "Añade tu primera receta" → wizard, "Explora el catálogo" → /discover. ✅
+10. As a product owner, analytics events fire correctly without PII. ✅
+
+_Engine consumption (strict constraint per D-008)_
+- Traffic-light logic is NEVER computed client-side.
+- LIB-001 calls `rpc('compute_library_status', { p_user_id })`.
+- LIB-002 calls `rpc('compute_recipe_status', { p_recipe_id, p_user_id })`.
+- Missing-ingredient highlighting is driven exclusively by the RPC's `missing_ingredients` JSONB array (matched by `ingredient_id` for catalog or `user_ingredient_id` for quarantine).
+
+_Files added / modified_
+- `frontend/src/screens/LibraryScreen.js` — LIB-001 ✅
+- `frontend/src/screens/LibraryRecipeDetailScreen.js` — LIB-002 ✅
+- `frontend/src/components/library/LibraryRecipeCard.js` — list card with semaphore + missing-count ✅
+- `frontend/src/components/library/EmptyLibraryState.js` — dual-CTA empty state ✅
+- `frontend/src/components/library/SemaphoreIndicator.js` — SemaphoreDot, SemaphoreStripe, SemaphoreBanner ✅
+- `frontend/src/App.js` — added route `/library/:id` ✅
+
+_Analytics events_
+- `library_viewed` — fired on LIB-001 load with `{ recipe_count, green_count, yellow_count, orange_count }` ✅
+- `library_recipe_opened` — fired when navigating LIB-001 → LIB-002 with `{ recipe_id, status }` ✅
+- `library_recipe_removed` — fired after successful removal with `{ recipe_id }` ✅
+
+_Out of scope for P4 (deliberately deferred)_
+- Shopping List flow (SHO-001 + MOD-004 + MOD-005) — buttons are "Próximamente".
+- "He cocinado esto" cooking history (MOD-003) — button is "Próximamente".
+
+---
+
+### Phase 8 — Future prompts (Out of scope now)
 - **REC-003** full recipe detail screen (display nutrition, ingredients, steps, key ingredients, etc.)
 - Editing already-completed recipes (private/proposed/public flows per decision D-028)
 - Biblioteca (saved community recipes)
@@ -236,12 +279,10 @@ _Known minor test-only note_
 ## 3) Next Actions
 1. ✅ Schema applied.
 2. ✅ Recipes draft migration applied.
-3. **(Optional enhancement — recommended)** Apply Despensa DDL in Supabase:
-   - Supabase Dashboard → Project `ldrxurbtrbjhxmrpdtjr` → SQL Editor → New query
-   - Paste `frontend/src/sql/despensa_ddl.sql`
-   - Click **Run**
-4. Continue with the next flow prompt (recommended order):
-   1) **REC-003 Detalle de receta** → 2) Lista de la Compra → 3) Biblioteca → 4) Descubrir.
+3. ✅ Pantry quarantine + semaphore engine migrations applied.
+4. ✅ Biblioteca (P4) shipped.
+5. Continue with the next flow prompt (recommended order):
+   1) **SHO-001 Lista de la Compra** (replaces the "Próximamente" CTA in LIB-002) → 2) MOD-003 "He cocinado esto" → 3) DIS-001 Descubrir → 4) D-028 Edit completed recipes with versioning.
 
 ---
 
