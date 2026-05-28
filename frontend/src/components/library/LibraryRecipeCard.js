@@ -79,7 +79,7 @@ export function LibraryRecipeCard({ row, onOpen, onLongPressRemove }) {
 
       <div className="flex min-w-0 flex-1 flex-col gap-1 pl-2">
         <div className="flex items-center gap-2">
-          <SemaphoreDot status={row.status} testId={`library-card-dot-${row.recipe_id}`} />
+          <SemaphoreDot status={row.status} testId={`library-dot-${row.recipe_id}`} />
           <span className="truncate font-serif text-title text-ink">
             {row.recipe_title}
           </span>
@@ -98,7 +98,7 @@ export function LibraryRecipeCard({ row, onOpen, onLongPressRemove }) {
           </span>
           {row.has_pending_ingredients ? (
             <span
-              data-testid={`library-card-approx-${row.recipe_id}`}
+              data-testid={`library-approx-${row.recipe_id}`}
               className="inline-flex h-5 items-center rounded-full bg-brand-light px-2 text-[10px] font-semibold uppercase tracking-wide text-brand"
               title="Cálculo aproximado: usa ingredientes pendientes de validar"
             >
@@ -109,7 +109,7 @@ export function LibraryRecipeCard({ row, onOpen, onLongPressRemove }) {
 
         {row.status !== "green" && row.missing_count > 0 ? (
           <span
-            data-testid={`library-card-missing-${row.recipe_id}`}
+            data-testid={`library-missing-${row.recipe_id}`}
             className="text-caption font-medium text-ink"
           >
             {missingCountLabel(row.missing_count)}

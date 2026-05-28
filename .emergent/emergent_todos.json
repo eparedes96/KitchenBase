@@ -1,22 +1,26 @@
 [
   {
-    "content": "Crear LibraryRecipeDetailScreen.js (LIB-002)",
+    "content": "Explorar estado actual: pantry/ingredients/units/recipes del usuario test",
     "status": "completed"
   },
   {
-    "content": "Añadir ruta /library/:id en App.js",
+    "content": "Crear seed script idempotente con 3 recetas adicionales (GREEN, YELLOW, GREEN+pending)",
     "status": "completed"
   },
   {
-    "content": "Verificar lint/build y screenshot del flujo Library → Detail",
+    "content": "Ejecutar seed y verificar via compute_library_status que los 4 estados aparezcan correctamente",
     "status": "completed"
   },
   {
-    "content": "Actualizar plan.md con la fase P4 completada",
+    "content": "Verificación UI (LIB-001 + LIB-002) de los 9 items del prompt",
     "status": "completed"
   },
   {
-    "content": "Llamar testing_agent_v3 y addressear hallazgos: (a) fallback defensivo para status null → orange, (b) ref guard para evitar library_viewed duplicado",
+    "content": "Aplicar test-id namespacing opcional para resolver el prefix-collision",
+    "status": "completed"
+  },
+  {
+    "content": "Documentar plan.md y crear script de cleanup",
     "status": "completed"
   }
 ]

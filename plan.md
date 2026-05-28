@@ -263,6 +263,34 @@ _Out of scope for P4 (deliberately deferred)_
 
 ---
 
+### Phase 7.1 — Verification closure (P4.1) ✅ Completed
+_What was missing in P4: the E2E test ran with ONLY orange recipes in the
+test user's library, so cross-color behavior (green / yellow / green+pending)
+was never exercised._
+
+_Test data seeded (idempotent, all tagged `P4.1-seed`):_
+- `tests/seed_p4_1_multicolor.py` — seeds 3 recipes + necessary pantry rows:
+  - **Ensalada Verde P4.1-seed** → GREEN (Lechuga key + Aceite/Sal as is_basic).
+  - **Pollo con Arroz P4.1-seed** → YELLOW (Pechuga key + Arroz key in pantry; Cebolla non-key NOT in pantry).
+  - **Yogur con Miel P4.1-seed** → GREEN + pending (Yogur key in pantry; quarantine ingredient "Miel P4.1-seed" in pantry; `has_pending_ingredients=true`).
+- `tests/seed_p4_1_cleanup.py` — removes the 3 recipes + the quarantine ingredient. Pass `--include-pantry` to also remove the catalog pantry rows.
+
+_Verification results (engine + UI, all PASS):_
+1. Cross-color ordering — strict green→yellow→orange, alphabetical within. ✅
+2. Green card omits "Faltan N" line. ✅
+3. Yellow card shows correct singular ("Falta 1 ingrediente" for Cebolla). ✅
+4. Green-with-pending stays GREEN and shows the subtle "Aproximada" marker. ✅
+5. LIB-002 GREEN → "Puedes cocinar esto ahora", no "Falta" labels, no row accents. ✅
+6. LIB-002 YELLOW → yellow banner, only the non-key Cebolla row highlighted in yellow. ✅
+7. LIB-002 ORANGE → orange banner, missing KEY rendered in orange with missing quantity ("Te faltan 100 g"). ✅
+8. `library_viewed` fires exactly once with per-color counts: `{recipe_count:5, green_count:2, yellow_count:1, orange_count:2}`. ✅
+9. Exactly one root card per recipe (5 buttons for 5 library rows). Test-id collision (button + dot + missing-span sharing prefix `library-card-`) resolved by namespacing inner elements as `library-dot-…`, `library-approx-…`, `library-missing-…`. No card returns a null/blank status. ✅
+
+_Trivial code adjustment (Section 3 of P4.1):_
+- `LibraryRecipeCard.js`: inner test-ids renamed (`library-dot-…`, `library-approx-…`, `library-missing-…`) so `data-testid^="library-card-"` selects exactly one element per recipe.
+
+---
+
 ### Phase 8 — Future prompts (Out of scope now)
 - **REC-003** full recipe detail screen (display nutrition, ingredients, steps, key ingredients, etc.)
 - Editing already-completed recipes (private/proposed/public flows per decision D-028)
