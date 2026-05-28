@@ -1,22 +1,22 @@
 [
   {
-    "content": "Create RecipeDetailScreen full implementation (header w/ back + menu, metadata, nutrition card, ingredients, steps, action area)",
-    "status": "in_progress"
+    "content": "Create RecipeDetailScreen full implementation",
+    "status": "completed"
   },
   {
-    "content": "Wire wizard final save to navigate to /my-recipes/:id instead of /my-recipes",
-    "status": "pending"
+    "content": "Wire wizard final save to navigate to /my-recipes/:id",
+    "status": "completed"
   },
   {
     "content": "Wire 'Editar receta' to /my-recipes/edit/:id (note: completed-recipe edit still shows ComingSoon per existing wizard behavior)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Add 4 PostHog events: recipe_detail_viewed, recipe_added_to_library, recipe_proposed_to_catalog, recipe_deleted",
-    "status": "pending"
+    "status": "completed"
   },
   {
-    "content": "Smoke test + testing_agent_v3 verification covering all 10 checklist items",
-    "status": "pending"
+    "content": "Testing_agent_v3 verification: 100% pass on 21 scenarios",
+    "status": "completed"
   }
 ]
