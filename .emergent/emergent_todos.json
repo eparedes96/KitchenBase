@@ -24,15 +24,15 @@
     "status": "completed"
   },
   {
-    "content": "Añadir 5 PostHog events (verificados todos disparando con props correctas)",
+    "content": "Añadir 5 PostHog events (verificados)",
     "status": "completed"
   },
   {
-    "content": "Verificar manualmente con screenshots los 12 items del checklist (Sec 7) - todos PASS",
+    "content": "Verificar 12 items del checklist (Sec 7) - manual + testing agent: TODOS PASS",
     "status": "completed"
   },
   {
-    "content": "Llamar testing_agent_v3 para validar E2E",
-    "status": "in_progress"
+    "content": "Testing agent_v3: 100% pass, 0 bugs",
+    "status": "completed"
   }
 ]
