@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, RefreshCw, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
@@ -20,8 +20,18 @@ import { FullScreenLoader } from "@/components/common/FullScreenLoader";
  * Ordering:
  *   1) by semaphore color: green -> yellow -> orange
  *   2) within each color, alphabetical by recipe_title (Spanish locale)
+ *
+ * Defensive fallback: if the engine ever returns a status outside
+ * {'green','yellow','orange'} (e.g. null on a data inconsistency), we
+ * normalize it to 'orange' so the user is never misled into thinking the
+ * recipe is cookable.
  */
 const STATUS_ORDER = { green: 0, yellow: 1, orange: 2 };
+const VALID_STATUSES = new Set(["green", "yellow", "orange"]);
+
+function normalizeStatus(raw) {
+  return VALID_STATUSES.has(raw) ? raw : "orange";
+}
 
 export default function LibraryScreen() {
   const navigate = useNavigate();
@@ -32,6 +42,10 @@ export default function LibraryScreen() {
   const [rows, setRows] = useState([]);
   const [query, setQuery] = useState("");
   const [pendingRemove, setPendingRemove] = useState(null);
+
+  // Guard so `library_viewed` is captured only once per mounted screen,
+  // even if React StrictMode double-invokes effects in development.
+  const viewTrackedRef = useRef(false);
 
   const fetchLibrary = useCallback(async () => {
     if (!user) return;
@@ -68,7 +82,7 @@ export default function LibraryScreen() {
     const enriched = list.map((r) => ({
       recipe_id: r.recipe_id,
       recipe_title: r.recipe_title,
-      status: r.status,
+      status: normalizeStatus(r.status),
       missing_count: Array.isArray(r.missing_ingredients)
         ? r.missing_ingredients.length
         : 0,
@@ -91,12 +105,18 @@ export default function LibraryScreen() {
     setRows(enriched);
     setLoading(false);
 
-    track("library_viewed", {
-      recipe_count: enriched.length,
-      green_count: enriched.filter((r) => r.status === "green").length,
-      yellow_count: enriched.filter((r) => r.status === "yellow").length,
-      orange_count: enriched.filter((r) => r.status === "orange").length,
-    });
+    // Fire library_viewed only once per mounted screen. The fetchLibrary
+    // callback can be re-invoked after a removal — those re-runs should
+    // not duplicate the analytics event.
+    if (!viewTrackedRef.current) {
+      viewTrackedRef.current = true;
+      track("library_viewed", {
+        recipe_count: enriched.length,
+        green_count: enriched.filter((r) => r.status === "green").length,
+        yellow_count: enriched.filter((r) => r.status === "yellow").length,
+        orange_count: enriched.filter((r) => r.status === "orange").length,
+      });
+    }
   }, [user]);
 
   useEffect(() => {

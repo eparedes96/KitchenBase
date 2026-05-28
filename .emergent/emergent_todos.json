@@ -1,22 +1,22 @@
 [
   {
-    "content": "Crear LibraryRecipeDetailScreen.js (LIB-002): cargar receta, llamar compute_recipe_status RPC, mostrar SemaphoreBanner, resaltar ingredientes faltantes, nutrition card, steps, botones disabled 'Próximamente'",
+    "content": "Crear LibraryRecipeDetailScreen.js (LIB-002)",
     "status": "completed"
   },
   {
-    "content": "Añadir ruta /library/:id en App.js apuntando a LibraryRecipeDetailScreen",
+    "content": "Añadir ruta /library/:id en App.js",
     "status": "completed"
   },
   {
-    "content": "Verificar lint/build y comprobar con screenshot que LIB-001 navega a LIB-002 correctamente",
+    "content": "Verificar lint/build y screenshot del flujo Library → Detail",
     "status": "completed"
   },
   {
-    "content": "Actualizar plan.md con la nueva fase P4 (LIB-001 + LIB-002) marcada como completada",
+    "content": "Actualizar plan.md con la fase P4 completada",
     "status": "completed"
   },
   {
-    "content": "Llamar testing_agent_v3 (frontend only) para validar flujos end-to-end del semáforo desde Library",
-    "status": "in_progress"
+    "content": "Llamar testing_agent_v3 y addressear hallazgos: (a) fallback defensivo para status null → orange, (b) ref guard para evitar library_viewed duplicado",
+    "status": "completed"
   }
 ]

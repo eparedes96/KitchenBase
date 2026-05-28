@@ -411,7 +411,13 @@ export default function LibraryRecipeDetailScreen() {
       setMissingIngredients([]);
     } else {
       const row = Array.isArray(statusRes.data) ? statusRes.data[0] : null;
-      setStatus(row?.status ?? "orange");
+      const rawStatus = row?.status;
+      // Same defensive normalization as LIB-001: unknown -> orange.
+      setStatus(
+        rawStatus === "green" || rawStatus === "yellow" || rawStatus === "orange"
+          ? rawStatus
+          : "orange"
+      );
       setMissingIngredients(
         Array.isArray(row?.missing_ingredients) ? row.missing_ingredients : []
       );
