@@ -1,0 +1,57 @@
+{
+  "summary": "Completed comprehensive frontend testing of REC-003 Recipe Detail Screen. All core functionality verified: navigation from recipe list, metadata display, nutrition card, ingredients/steps lists, library toggle, propose-to-catalog flow, three-dots menu (edit/delete), not-found handling. Verified NO semáforo logic present (code inspection confirmed no compute_recipe_status/compute_library_status calls). All UI text in Spanish, design tokens respected. Wizard→detail navigation verified via code review (RecipeWizardScreen.js line 456).",
+  
+  "backend_issues": {
+    "critical_bugs": [],
+    "flaky_endpoints": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  
+  "passed_tests": [
+    "Recipe detail screen loads with [data-testid=recipe-detail-screen]",
+    "Title displays in Playfair Display font [data-testid=recipe-detail-title]",
+    "Back link 'Mis Recetas' present top-left [data-testid=recipe-detail-back]",
+    "Three-dots menu button present top-right [data-testid=recipe-detail-menu-button]",
+    "Metadata chips display correctly: time (optional), difficulty (Spanish: Fácil/Media/Difícil), servings (N raciones)",
+    "Nutrition card titled 'Estimación por ración' [data-testid=recipe-nutrition]",
+    "Nutrition unavailable state works [data-testid=recipe-nutrition-unavailable]",
+    "Ingredients list displays with sort_order, quantity+unit, key markers '· Clave'",
+    "Steps list displays as numbered cards with 'Preparación' title",
+    "Library toggle works: 'Añadir a mi biblioteca' ↔ 'En mi biblioteca' with toast messages",
+    "Propose-to-catalog button present [data-testid=recipe-propose-button] when allowed",
+    "Propose confirmation dialog works [data-testid=recipe-confirm-propose]",
+    "Three-dots menu opens [data-testid=recipe-options-menu] with edit/delete options",
+    "Edit option navigates to /my-recipes/edit/:id showing ComingSoon for non-drafts",
+    "Delete confirmation dialog works [data-testid=recipe-confirm-delete]",
+    "Not-found screen displays [data-testid=recipe-detail-not-found] for invalid IDs",
+    "Not-found back button works [data-testid=recipe-not-found-back]",
+    "NO semáforo logic present (verified via code inspection)",
+    "All UI text in Spanish",
+    "No console errors or page errors",
+    "Wizard final-save navigation to /my-recipes/:id (verified via code review line 456)"
+  ],
+  
+  "test_report_links": [
+    "/root/.emergent/automation_output/20260528_143232/console_20260528_143232.log",
+    ".screenshots/detail-screen.png",
+    ".screenshots/menu.png",
+    ".screenshots/not-found.png"
+  ],
+  
+  "success_percentage": {
+    "frontend": "100%",
+    "backend": "N/A (frontend-only testing)"
+  },
+  
+  "action_item_for_main_agent": "",
+  
+  "updated_files": [],
+  
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_test_itself": false
+}

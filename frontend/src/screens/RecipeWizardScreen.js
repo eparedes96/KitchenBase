@@ -453,7 +453,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
       ingredient_count: ingredients.length,
       has_pending_ingredients: hasPending,
     });
-    navigate("/my-recipes", { replace: true });
+    navigate(`/my-recipes/${recipeId}`, { replace: true });
   };
 
   const handleFinalSave = async () => {

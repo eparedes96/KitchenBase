@@ -1,42 +1,22 @@
 [
   {
-    "content": "Create migration 006_semaphore_engine.sql and request user apply",
-    "status": "completed"
+    "content": "Create RecipeDetailScreen full implementation (header w/ back + menu, metadata, nutrition card, ingredients, steps, action area)",
+    "status": "in_progress"
   },
   {
-    "content": "Verify migration applied + all 4 functions reachable via RPC",
-    "status": "completed"
+    "content": "Wire wizard final save to navigate to /my-recipes/:id instead of /my-recipes",
+    "status": "pending"
   },
   {
-    "content": "Tests 1-3 (green/yellow/orange) using existing eparedes recipes",
-    "status": "completed"
+    "content": "Wire 'Editar receta' to /my-recipes/edit/:id (note: completed-recipe edit still shows ComingSoon per existing wizard behavior)",
+    "status": "pending"
   },
   {
-    "content": "Test 4 (basic ignored) covered by recipe 2b0c17b3 (Huevo basic)",
-    "status": "completed"
+    "content": "Add 4 PostHog events: recipe_detail_viewed, recipe_added_to_library, recipe_proposed_to_catalog, recipe_deleted",
+    "status": "pending"
   },
   {
-    "content": "Test 5 (unit conversion success) using new TEST5 recipe",
-    "status": "completed"
-  },
-  {
-    "content": "Test 6 (insufficient quantity) using new TEST6 recipe",
-    "status": "completed"
-  },
-  {
-    "content": "Test 7 (quarantine NOT in pantry) covered by recipe 3b8f8efa with ajonjoli",
-    "status": "completed"
-  },
-  {
-    "content": "Test 8 (quarantine IN pantry, matching UUIDs) using new TEST8 recipe",
-    "status": "completed"
-  },
-  {
-    "content": "Test 9 (quarantine unit conversion unavailable) using new TEST9 recipe",
-    "status": "completed"
-  },
-  {
-    "content": "Tests 10/11/12 (library-wide, empty library, not-in-library) all passed",
-    "status": "completed"
+    "content": "Smoke test + testing_agent_v3 verification covering all 10 checklist items",
+    "status": "pending"
   }
 ]
