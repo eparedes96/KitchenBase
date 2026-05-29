@@ -366,6 +366,25 @@ _Analytics events_
 
 ---
 
+### Phase 9.E1 — Engine hardening, part 1 (D-032) ✅ Completed
+- Migration **008**: introduced `kb_base_unit_id(text)` helper and rewrote `kb_convert_to_base` + the quarantine branch of `compute_recipe_status` to compare by `unit_id` instead of free-text `units.symbol`.
+- Surfaced one remaining fragility honestly: with both gramo + mililitro carrying `is_base=true`, the helper still needed `symbol = p_base_unit` to disambiguate, so a robustness proof that renamed `gramo.symbol='gr'` still flipped the recipe to orange.
+
+### Phase 9.E1.1 — Engine hardening, part 2: dimensional axis (D-033) ✅ Completed
+- Migration **009**: added `units.dimension` (`'mass' | 'volume'`, nullable so 'ud' and 'pizca' stay NULL) with a CHECK constraint, plus `ingredients.default_unit_id` (FK to `units`, nullable, ON DELETE SET NULL).
+- Populated dimension for the 8 mass/volume rows; defensive defaults seeded for existing P4.1 ingredients (21 g + 2 ml = 23/23 ingredients).
+- Rewrote `kb_base_unit_id` to resolve by `(is_base = TRUE, dimension = CASE p_base_unit ...)`. The engine no longer reads `units.symbol` anywhere — symbol changes on any row no longer affect semáforo correctness.
+
+**Robustness proof (now PASS):** with `gramo.symbol='gr'` in place, `kb_base_unit_id('g')` still returned the correct row id and `Ensalada Verde` stayed green — the exact scenario that failed in E1 is now fully closed.
+
+_Files added_
+- `frontend/src/sql/migrations/008_semaphore_engine_isbase_fix.sql` (E1)
+- `frontend/src/sql/migrations/009_units_dimension_and_default.sql` (E1.1)
+
+_Files modified: none (no frontend, no other migrations, no RLS, no triggers)._
+
+---
+
 ### Phase 10 — Future prompts (Out of scope now)
 - **REC-003** full recipe detail screen (display nutrition, ingredients, steps, key ingredients, etc.)
 - Editing already-completed recipes (private/proposed/public flows per decision D-028)

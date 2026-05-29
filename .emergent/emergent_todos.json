@@ -1,42 +1,38 @@
 [
   {
-    "content": "Crear migración 008 (FUNCTIONS-ONLY)",
+    "content": "Guardar migración 009 en el repo",
     "status": "completed"
   },
   {
-    "content": "Hand-off al usuario para aplicar en Supabase",
+    "content": "Item 1: columnas + constraints validados",
     "status": "completed"
   },
   {
-    "content": "Item 3: kb_base_unit_id resolves correctly",
+    "content": "Item 2: 8 dimensions correctas + ud/pizca NULL",
     "status": "completed"
   },
   {
-    "content": "Item 1: P4.1 multicolor sin regresión",
+    "content": "Item 3: defaults seedeados solo en ingredientes existentes",
     "status": "completed"
   },
   {
-    "content": "Item 6: quarantine path",
+    "content": "Item 4: robustness proof PASS (gramo.symbol='gr' → sigue VERDE)",
     "status": "completed"
   },
   {
-    "content": "Item 2: E2E P5/P6 UI smoke test",
+    "content": "Item 5: P4.1 regression sin cambios",
     "status": "completed"
   },
   {
-    "content": "Item 4: robustness proof - FAIL reportado honestamente",
+    "content": "Item 6: P5/P6 end-to-end siguen cerrando el loop",
     "status": "completed"
   },
   {
-    "content": "Item 5: code-level audit",
+    "content": "Item 7: cero frontend + cero RLS",
     "status": "completed"
   },
   {
-    "content": "Item 7: no console errors + no frontend changes",
-    "status": "completed"
-  },
-  {
-    "content": "Reportar pass/fail por item",
+    "content": "Reporte final",
     "status": "completed"
   }
 ]
