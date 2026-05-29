@@ -1,30 +1,42 @@
 [
   {
-    "content": "Verificar esquema cooking_history y pantry_items",
+    "content": "Crear migración 008 (FUNCTIONS-ONLY)",
     "status": "completed"
   },
   {
-    "content": "Crear ConfirmCookedModal.js (MOD-003)",
+    "content": "Hand-off al usuario para aplicar en Supabase",
     "status": "completed"
   },
   {
-    "content": "Modificar LibraryRecipeDetailScreen.js: habilitar 'He cocinado esto' + wire MOD-003",
+    "content": "Item 3: kb_base_unit_id resolves correctly",
     "status": "completed"
   },
   {
-    "content": "Implementar discount con floor-at-zero y no-phantom-rows",
+    "content": "Item 1: P4.1 multicolor sin regresión",
     "status": "completed"
   },
   {
-    "content": "Añadir 2 PostHog events",
+    "content": "Item 6: quarantine path",
     "status": "completed"
   },
   {
-    "content": "Verificar 12 items del checklist (Sec 6) - todos PASS",
+    "content": "Item 2: E2E P5/P6 UI smoke test",
     "status": "completed"
   },
   {
-    "content": "testing_agent_v3: 100%, 0 bugs, loop closure verificado",
+    "content": "Item 4: robustness proof - FAIL reportado honestamente",
+    "status": "completed"
+  },
+  {
+    "content": "Item 5: code-level audit",
+    "status": "completed"
+  },
+  {
+    "content": "Item 7: no console errors + no frontend changes",
+    "status": "completed"
+  },
+  {
+    "content": "Reportar pass/fail por item",
     "status": "completed"
   }
 ]
