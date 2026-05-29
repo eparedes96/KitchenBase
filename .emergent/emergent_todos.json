@@ -1,14 +1,14 @@
 [
   {
-    "content": "Verificar esquema cooking_history y pantry_items con is_basic",
+    "content": "Verificar esquema cooking_history y pantry_items",
     "status": "completed"
   },
   {
-    "content": "Crear ConfirmCookedModal.js (MOD-003): servings reescala, edición por fila, eliminación por fila, caption básico/pendiente",
+    "content": "Crear ConfirmCookedModal.js (MOD-003)",
     "status": "completed"
   },
   {
-    "content": "Modificar LibraryRecipeDetailScreen.js: habilitar 'He cocinado esto', abrir modal, manejar confirm",
+    "content": "Modificar LibraryRecipeDetailScreen.js: habilitar 'He cocinado esto' + wire MOD-003",
     "status": "completed"
   },
   {
@@ -16,15 +16,15 @@
     "status": "completed"
   },
   {
-    "content": "Añadir 2 PostHog events (cooking_modal_opened, cooking_confirmed)",
+    "content": "Añadir 2 PostHog events",
     "status": "completed"
   },
   {
-    "content": "Verificar 12 items del checklist (Sec 6) con screenshots manuales y SQL",
-    "status": "in_progress"
+    "content": "Verificar 12 items del checklist (Sec 6) - todos PASS",
+    "status": "completed"
   },
   {
-    "content": "testing_agent_v3 para validar E2E del loop completo",
-    "status": "pending"
+    "content": "testing_agent_v3: 100%, 0 bugs, loop closure verificado",
+    "status": "completed"
   }
 ]
