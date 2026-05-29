@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/context/AuthContext";
 import { FullScreenLoader } from "@/components/common/FullScreenLoader";
 import { SemaphoreBanner } from "@/components/library/SemaphoreIndicator";
+import { ConfirmCookedModal } from "@/components/cooking/ConfirmCookedModal";
 import { formatQuantity } from "@/lib/textUtils";
 import { convertToBase } from "@/lib/unitConversion";
 import { track } from "@/lib/analytics";
@@ -273,18 +274,23 @@ function StepsList({ steps }) {
  *   nullable. A calm explanatory caption is rendered when any were
  *   skipped (Section 4.3).
  *
- * - "He cocinado esto" stays disabled / "Próximamente". Its flow (MOD-003)
- *   is out of scope for P5.
+ * - "He cocinado esto" is ALWAYS visible (does not depend on the semáforo
+ *   color — you can cook a green recipe). Tapping it opens MOD-003 to
+ *   preview the discount, let the user adjust, and on confirm subtracts
+ *   from the pantry + records a cooking_history row (P6).
  */
-function RecipeActions({ recipeId, missingIngredients, recipeIngredients }) {
+function RecipeActions({ recipe, missingIngredients, recipeIngredients, onCooked }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  const recipeId = recipe?.id;
 
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState("");
   const toastTimerRef = useRef(null);
   const [skippedCaption, setSkippedCaption] = useState("");
   const [lastAdded, setLastAdded] = useState(0);
+  const [cookOpen, setCookOpen] = useState(false);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -417,22 +423,18 @@ function RecipeActions({ recipeId, missingIngredients, recipeIngredients }) {
         </button>
       ) : null}
 
-      {/* "He cocinado esto" remains disabled until MOD-003 is built (out of scope for P5). */}
+      {/* "He cocinado esto" — opens MOD-003 to preview the discount and confirm. */}
       <button
         type="button"
-        disabled
-        aria-disabled="true"
+        onClick={() => {
+          track("cooking_modal_opened", { recipe_id: recipeId });
+          setCookOpen(true);
+        }}
         data-testid="library-recipe-cook-cta"
-        title="Próximamente"
-        className="flex h-11 w-full cursor-not-allowed items-center justify-between gap-2 rounded-md border border-line bg-surface-secondary px-4 text-body text-ink-secondary"
+        className="flex h-11 w-full items-center justify-center gap-2 rounded-md border border-brand bg-surface text-body font-semibold text-brand transition-colors hover:bg-brand-light"
       >
-        <span className="flex items-center gap-2">
-          <Utensils className="h-4 w-4" />
-          He cocinado esto
-        </span>
-        <span className="rounded-full bg-brand-light px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand">
-          Próximamente
-        </span>
+        <Utensils className="h-4 w-4" />
+        He cocinado esto
       </button>
 
       {skippedCaption ? (
@@ -472,6 +474,32 @@ function RecipeActions({ recipeId, missingIngredients, recipeIngredients }) {
           {toast}
         </div>
       ) : null}
+
+      <ConfirmCookedModal
+        open={cookOpen}
+        recipe={recipe}
+        ingredients={recipeIngredients}
+        onClose={() => setCookOpen(false)}
+        onConfirmed={({ discountedCount, removedCount, servingsMade }) => {
+          setCookOpen(false);
+          const parts = [];
+          if (discountedCount > 0) {
+            parts.push(
+              discountedCount === 1
+                ? "1 ingrediente descontado"
+                : `${discountedCount} ingredientes descontados`
+            );
+          }
+          const msg = parts.length
+            ? `Hecho. Hemos actualizado tu despensa (${parts.join(", ")}).`
+            : "Hecho. Hemos registrado el cocinado.";
+          showToast(msg);
+          // Let the parent know so it can refresh the engine-computed
+          // status (the semáforo recomputes on the next read; the parent
+          // chooses what to do here, e.g. re-fetch this detail screen).
+          onCooked?.({ discountedCount, removedCount, servingsMade });
+        }}
+      />
     </section>
   );
 }
@@ -726,11 +754,18 @@ export default function LibraryRecipeDetailScreen() {
       </section>
 
       {/* Actions: shopping CTA enabled when there are missing ingredients;
-          "He cocinado esto" remains disabled until MOD-003 ships. */}
+          "He cocinado esto" opens MOD-003 to subtract from pantry + record history. */}
       <RecipeActions
-        recipeId={recipe.id}
+        recipe={recipe}
         missingIngredients={missingIngredients}
         recipeIngredients={ingredients}
+        onCooked={() => {
+          // After a successful cook, re-fetch everything: pantry has been
+          // discounted so the engine will recompute the semáforo (the
+          // banner may flip from green to yellow/orange — that is the
+          // loop closing).
+          loadEverything();
+        }}
       />
     </div>
   );

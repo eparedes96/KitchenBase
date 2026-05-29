@@ -1,38 +1,30 @@
 [
   {
-    "content": "Explorar pantry modals + BottomSheet + supabase patterns",
+    "content": "Verificar esquema cooking_history y pantry_items con is_basic",
     "status": "completed"
   },
   {
-    "content": "Verificar estructura shopping_list_items",
+    "content": "Crear ConfirmCookedModal.js (MOD-003): servings reescala, edición por fila, eliminación por fila, caption básico/pendiente",
     "status": "completed"
   },
   {
-    "content": "Crear ShoppingListScreen.js (SHO-001) + ShoppingListItem + EmptyState",
+    "content": "Modificar LibraryRecipeDetailScreen.js: habilitar 'He cocinado esto', abrir modal, manejar confirm",
     "status": "completed"
   },
   {
-    "content": "Crear ConfirmBoughtModal.js (MOD-004) con escritura a pantry + mark item bought",
+    "content": "Implementar discount con floor-at-zero y no-phantom-rows",
     "status": "completed"
   },
   {
-    "content": "Crear AddShoppingItemModal.js (MOD-005) catalog-only con consolidación",
+    "content": "Añadir 2 PostHog events (cooking_modal_opened, cooking_confirmed)",
     "status": "completed"
   },
   {
-    "content": "Modificar LibraryRecipeDetailScreen.js: habilitar botón shopping; mantener He cocinado esto disabled",
-    "status": "completed"
+    "content": "Verificar 12 items del checklist (Sec 6) con screenshots manuales y SQL",
+    "status": "in_progress"
   },
   {
-    "content": "Añadir 5 PostHog events (verificados)",
-    "status": "completed"
-  },
-  {
-    "content": "Verificar 12 items del checklist (Sec 7) - manual + testing agent: TODOS PASS",
-    "status": "completed"
-  },
-  {
-    "content": "Testing agent_v3: 100% pass, 0 bugs",
-    "status": "completed"
+    "content": "testing_agent_v3 para validar E2E del loop completo",
+    "status": "pending"
   }
 ]

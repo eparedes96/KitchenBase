@@ -325,7 +325,48 @@ _Out of scope for P5 (deliberately deferred)_
 
 ---
 
-### Phase 9 — Future prompts (Out of scope now)
+### Phase 9 — "He cocinado esto" (MOD-003) ✅ Completed — D-027 prototype loop complete
+_The fifth and final critical flow. With this in place the core loop closes:
+LIB-002 → "He cocinado esto" → MOD-003 (preview + edit) → confirm → pantry
+discounted in base units (floor-at-zero) → cooking_history row → on next
+read of LIB-001/LIB-002 the engine recomputes the semáforo, so a green
+recipe can become yellow/orange after consuming its key ingredients._
+
+_User stories_
+1. On LIB-002, "He cocinado esto" is enabled and always visible (independent of the semáforo color). ✅
+2. Tapping it opens MOD-003 titled "Has cocinado [recipe title]" with the recipe's `servings` value pre-filled. ✅
+3. Changing the servings number rescales every non-overridden preview row in real time. ✅
+4. Each non-basic / non-quarantine row's quantity is individually editable (per-row override) and can be removed from the discount (with restore). ✅
+5. Basic ingredients render with "Básico — no se descuenta"; quarantine ingredients render with "Pendiente — no se descuenta"; neither is discounted. ✅
+6. Catalog ingredients the user doesn't stock render with "No está en tu despensa — no se descuenta" (no phantom row is created on confirm). ✅
+7. "Confirmar y descontar" subtracts the final quantity (in base unit via `kb_convert_to_base`) from the matching `pantry_items` row, **floor-at-zero, never negative**, and inserts one `cooking_history` row with `servings_made` + `cooked_at`. ✅
+8. After confirm: LIB-002 detail re-fetches; the sem\u00e1foro reflects the new pantry state on the next engine read. ✅
+9. "Cancelar" performs zero writes. ✅
+10. Out of scope (not added in P6): "add ingredient" control, free-text notes. ✅
+
+_Files added_
+- `frontend/src/components/cooking/ConfirmCookedModal.js` — MOD-003. ✅
+
+_Files modified_
+- `frontend/src/screens/LibraryRecipeDetailScreen.js` — second LIB-002 button enabled; wires MOD-003 + a post-confirm `loadEverything()` so the sem\u00e1foro reflects the new pantry state. ✅
+
+_Live evidence of the loop closing_
+- Pantry Lechuga 300 g → cook 1 serving (-100 g) → 200 g (banner still **green**).
+- Cook 2 servings (-200 g) → **0 g** (floor at zero) → banner re-computes to **orange** ("Te faltan 100 g" of Lechuga). The Add-missing-to-shopping CTA reappears, closing the cycle back into P5's loop.
+
+_Critical rules respected_
+- No new migration. Only existing tables: `recipes`, `recipe_ingredients`, `pantry_items`, `cooking_history`.
+- No client-side recomputation of the sem\u00e1foro (D-008): the engine handles it on the next read.
+- No negative or phantom pantry rows.
+- No semáforo colors inside MOD-003.
+
+_Analytics events_
+- `cooking_modal_opened` — `{ recipe_id }`. ✅
+- `cooking_confirmed` — `{ recipe_id, servings_made, discounted_count, removed_count }`. ✅
+
+---
+
+### Phase 10 — Future prompts (Out of scope now)
 - **REC-003** full recipe detail screen (display nutrition, ingredients, steps, key ingredients, etc.)
 - Editing already-completed recipes (private/proposed/public flows per decision D-028)
 - Biblioteca (saved community recipes)
