@@ -377,11 +377,18 @@ _Analytics events_
 
 **Robustness proof (now PASS):** with `gramo.symbol='gr'` in place, `kb_base_unit_id('g')` still returned the correct row id and `Ensalada Verde` stayed green — the exact scenario that failed in E1 is now fully closed.
 
+### Phase 9.E2 — Count units catalog + seed conversions (D-034) ✅ Completed
+- Migration **010**: added the `diente` unit (symbol='diente', is_base=false, dimension=NULL, unit_system='culinary') and seeded per-ingredient `unit_conversions` for the count-counted ingredients that already exist.
+- **Honest deviation reported**: `(Huevo, unidad) = 60 g` already existed in `unit_conversions`; the NOT EXISTS guard preserved it (the prompt's "50 g" seed factor was NOT applied — by design of the idempotent rule). `(Cebolla, unidad) = 150 g` already existed and matched the seed factor exactly. The only new conversion row inserted was `(Ajo, diente) = 5 g`.
+- Section 4 (refining `default_unit_id` to count units) deliberately SKIPPED; all 3 target ingredients keep `default_unit_id = gramo`, which trivially satisfies the D-034 invariant.
+- Engine integration verified: `kb_convert_to_base(Ajo, 2, diente) = 10`, `(Huevo, 4, unidad) = 240`, `(Cebolla, 1, unidad) = 150` — all via the unchanged 008/009 engine.
+
 _Files added_
 - `frontend/src/sql/migrations/008_semaphore_engine_isbase_fix.sql` (E1)
 - `frontend/src/sql/migrations/009_units_dimension_and_default.sql` (E1.1)
+- `frontend/src/sql/migrations/010_count_units_and_conversions.sql` (E2 / D-034)
 
-_Files modified: none (no frontend, no other migrations, no RLS, no triggers)._
+_Files modified: none (no frontend, no other migrations, no RLS, no triggers, no engine functions)._
 
 ---
 
