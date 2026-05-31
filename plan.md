@@ -1,5 +1,9 @@
 # KitchenBase — Foundational Setup Plan (Updated)
 
+> **Nota de corrección (mayo 2026, repaso previo a Claude Code):**
+> - **REC-003 (Detalle de Receta Propia) está COMPLETO** (`frontend/src/screens/RecipeDetailScreen.js`: nutrición, ingredientes, pasos, añadir a biblioteca, proponer al catálogo, editar/eliminar), pese a que más abajo (Fase 4 y Fase 10) aparece como placeholder / fuera de alcance.
+> - El modelo tiene **13 tablas, no 14** (corregido en el Modelo de Datos v1.7 tras verificar la base de datos viva). Donde este documento dice "14 tables", léase **13**.
+
 ## 1) Objectives
 - Deliver a **mobile-first React shell** with fixed design tokens (terracotta **#C2714F**, Playfair Display + Inter), **no shadows/gradients**. ✅ **Completed**
 - Implement **Supabase Auth (email/password)** with session persistence, protected routing, and logout. ✅ **Completed**
