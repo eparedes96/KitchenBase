@@ -1,6 +1,10 @@
 import { useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
-import { LOCATION_ICONS, LOCATION_LABEL, CATEGORY_FALLBACK_ICON } from "./locationConfig";
+import {
+  LOCATION_ICONS,
+  LOCATION_LABEL,
+  CATEGORY_FALLBACK_ICON,
+} from "./locationConfig";
 import { formatQuantity } from "@/lib/textUtils";
 
 /**
@@ -147,8 +151,8 @@ export function PantryItemRow({ item, viewMode, onEdit, onDelete }) {
           </div>
           <span className="truncate text-caption text-ink-secondary">
             {viewMode === "location"
-              ? item.ingredient?.category_name ?? "—"
-              : LOCATION_LABEL[item.location] ?? "—"}
+              ? (item.ingredient?.category_name ?? "—")
+              : (LOCATION_LABEL[item.location] ?? "—")}
             {qtyLabel ? <> · {qtyLabel}</> : null}
           </span>
         </div>

@@ -5,9 +5,9 @@ import { ChevronRight } from "lucide-react";
  * Difficulty label mapping for UI (Spanish).
  */
 const DIFFICULTY_LABEL = {
-  easy:   "Fácil",
+  easy: "Fácil",
   medium: "Media",
-  hard:   "Difícil",
+  hard: "Difícil",
 };
 
 /**
@@ -64,8 +64,14 @@ export function RecipeListCard({ recipe, onOpen, onLongPressDelete }) {
   const pill = recipe.is_draft
     ? { label: "Borrador", className: "bg-brand-light text-brand" }
     : recipe.status === "proposed"
-    ? { label: "Propuesta", className: "border border-line text-ink-secondary" }
-    : { label: "Privada",  className: "border border-line text-ink-secondary" };
+      ? {
+          label: "Propuesta",
+          className: "border border-line text-ink-secondary",
+        }
+      : {
+          label: "Privada",
+          className: "border border-line text-ink-secondary",
+        };
 
   return (
     <button

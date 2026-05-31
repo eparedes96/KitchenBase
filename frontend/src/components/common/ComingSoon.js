@@ -18,7 +18,9 @@ export function ComingSoon({ title, description }) {
         {title}
       </h1>
       {description ? (
-        <p className="max-w-[280px] text-body text-ink-secondary">{description}</p>
+        <p className="max-w-[280px] text-body text-ink-secondary">
+          {description}
+        </p>
       ) : (
         <p className="max-w-[280px] text-body text-ink-secondary">
           Estamos cocinando esta pantalla. Vuelve pronto.

@@ -10,10 +10,14 @@ import { useAuth } from "@/context/AuthContext";
 function translateAuthError(error) {
   if (!error) return "";
   const msg = (error.message || "").toLowerCase();
-  if (msg.includes("invalid login credentials")) return "Email o contraseña incorrectos.";
-  if (msg.includes("email not confirmed")) return "Tu email aún no está confirmado.";
-  if (msg.includes("too many")) return "Demasiados intentos. Espera unos minutos.";
-  if (msg.includes("network") || msg.includes("fetch")) return "Sin conexión. Revisa tu red.";
+  if (msg.includes("invalid login credentials"))
+    return "Email o contraseña incorrectos.";
+  if (msg.includes("email not confirmed"))
+    return "Tu email aún no está confirmado.";
+  if (msg.includes("too many"))
+    return "Demasiados intentos. Espera unos minutos.";
+  if (msg.includes("network") || msg.includes("fetch"))
+    return "Sin conexión. Revisa tu red.";
   return "No se pudo iniciar sesión. Inténtalo de nuevo.";
 }
 
@@ -67,7 +71,9 @@ export default function LoginScreen() {
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-light text-brand">
             <ChefHat className="h-5 w-5" />
           </div>
-          <h1 className="font-serif text-display text-ink">Bienvenido de nuevo</h1>
+          <h1 className="font-serif text-display text-ink">
+            Bienvenido de nuevo
+          </h1>
           <p className="text-body text-ink-secondary">
             Accede a tu cuenta para continuar.
           </p>
@@ -79,7 +85,9 @@ export default function LoginScreen() {
           data-testid="login-form"
         >
           <label className="flex flex-col gap-1.5">
-            <span className="text-caption font-medium text-ink-secondary">Email</span>
+            <span className="text-caption font-medium text-ink-secondary">
+              Email
+            </span>
             <input
               type="email"
               inputMode="email"
@@ -94,7 +102,9 @@ export default function LoginScreen() {
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-caption font-medium text-ink-secondary">Contraseña</span>
+            <span className="text-caption font-medium text-ink-secondary">
+              Contraseña
+            </span>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -109,10 +119,16 @@ export default function LoginScreen() {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                aria-label={
+                  showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                }
                 className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-ink-secondary hover:text-brand"
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </button>
             </div>
           </label>

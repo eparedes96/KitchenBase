@@ -40,9 +40,11 @@ export function AuthProvider({ children }) {
       });
 
     // Subscribe to future changes
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession ?? null);
-    });
+    const { data: sub } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        setSession(newSession ?? null);
+      },
+    );
 
     return () => {
       isMounted = false;
@@ -56,7 +58,9 @@ export function AuthProvider({ children }) {
       password,
       options: {
         emailRedirectTo:
-          typeof window !== "undefined" ? `${window.location.origin}/` : undefined,
+          typeof window !== "undefined"
+            ? `${window.location.origin}/`
+            : undefined,
       },
     });
     return { data, error };
@@ -84,7 +88,7 @@ export function AuthProvider({ children }) {
       signIn,
       signOut,
     }),
-    [session, loading, signUp, signIn, signOut]
+    [session, loading, signUp, signIn, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

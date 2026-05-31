@@ -48,7 +48,7 @@ export function ConfirmBoughtModal({ open, item, onClose, onSaved }) {
       const base = ulist.find(
         (u) =>
           (u.symbol === "g" && item.base_unit === "g") ||
-          (u.symbol === "ml" && item.base_unit === "ml")
+          (u.symbol === "ml" && item.base_unit === "ml"),
       );
       setUnitId(base?.id || ulist[0]?.id || "");
       setQuantity(formatQuantity(item.needed_quantity).replace(",", "."));
@@ -68,7 +68,11 @@ export function ConfirmBoughtModal({ open, item, onClose, onSaved }) {
     setErrorMsg("");
 
     // 1) Convert the entered quantity to the ingredient's base unit.
-    const boughtBase = await convertToBase(item.ingredient_id, parsedQuantity, unitId);
+    const boughtBase = await convertToBase(
+      item.ingredient_id,
+      parsedQuantity,
+      unitId,
+    );
     if (boughtBase == null) {
       setSubmitting(false);
       setErrorMsg("No se pudo convertir la unidad. Prueba con la unidad base.");
@@ -114,7 +118,7 @@ export function ConfirmBoughtModal({ open, item, onClose, onSaved }) {
         const existingBase = await convertToBase(
           item.ingredient_id,
           Number(existingPantry.quantity ?? 0),
-          existingPantry.unit_id
+          existingPantry.unit_id,
         );
         const newQty = (existingBase ?? 0) + boughtBase;
         const { error: updErr } = await supabase
@@ -127,7 +131,9 @@ export function ConfirmBoughtModal({ open, item, onClose, onSaved }) {
           .eq("id", existingPantry.id);
         if (updErr) {
           setSubmitting(false);
-          setErrorMsg("No se pudo actualizar tu despensa. Inténtalo más tarde.");
+          setErrorMsg(
+            "No se pudo actualizar tu despensa. Inténtalo más tarde.",
+          );
           return;
         }
       }
@@ -161,7 +167,9 @@ export function ConfirmBoughtModal({ open, item, onClose, onSaved }) {
       .eq("id", item.id);
     if (updItemErr) {
       setSubmitting(false);
-      setErrorMsg("No se pudo marcar el ítem como comprado. Inténtalo más tarde.");
+      setErrorMsg(
+        "No se pudo marcar el ítem como comprado. Inténtalo más tarde.",
+      );
       return;
     }
 
@@ -224,7 +232,9 @@ export function ConfirmBoughtModal({ open, item, onClose, onSaved }) {
             />
           </label>
           <label className="flex flex-1 flex-col gap-1.5">
-            <span className="text-caption font-medium text-ink-secondary">Unidad</span>
+            <span className="text-caption font-medium text-ink-secondary">
+              Unidad
+            </span>
             <select
               value={unitId}
               onChange={(e) => setUnitId(e.target.value)}

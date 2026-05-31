@@ -1,9 +1,9 @@
 import { WizardFooter } from "./WizardFooter";
 
 const DIFFICULTY_OPTIONS = [
-  { value: "easy",   label: "Fácil"  },
-  { value: "medium", label: "Media"  },
-  { value: "hard",   label: "Difícil" },
+  { value: "easy", label: "Fácil" },
+  { value: "medium", label: "Media" },
+  { value: "hard", label: "Difícil" },
 ];
 
 export function Step2Difficulty({

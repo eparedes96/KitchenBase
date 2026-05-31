@@ -35,7 +35,9 @@ export function Step5Steps({
         <p className="text-caption uppercase tracking-[0.18em] text-ink-secondary">
           5. Pasos de elaboración
         </p>
-        <h1 className="font-serif text-display-lg text-ink">Pasos de elaboración</h1>
+        <h1 className="font-serif text-display-lg text-ink">
+          Pasos de elaboración
+        </h1>
 
         <ul className="flex flex-col gap-3" data-testid="wizard-step5-list">
           {list.map((s, i) => (
@@ -76,7 +78,11 @@ export function Step5Steps({
         </button>
 
         {errorMsg ? (
-          <p role="alert" data-testid="wizard-step5-error" className="rounded-md border border-line bg-brand-light px-3 py-2 text-caption text-ink">
+          <p
+            role="alert"
+            data-testid="wizard-step5-error"
+            className="rounded-md border border-line bg-brand-light px-3 py-2 text-caption text-ink"
+          >
             {errorMsg}
           </p>
         ) : null}

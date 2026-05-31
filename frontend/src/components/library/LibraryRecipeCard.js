@@ -79,7 +79,10 @@ export function LibraryRecipeCard({ row, onOpen, onLongPressRemove }) {
 
       <div className="flex min-w-0 flex-1 flex-col gap-1 pl-2">
         <div className="flex items-center gap-2">
-          <SemaphoreDot status={row.status} testId={`library-dot-${row.recipe_id}`} />
+          <SemaphoreDot
+            status={row.status}
+            testId={`library-dot-${row.recipe_id}`}
+          />
           <span className="truncate font-serif text-title text-ink">
             {row.recipe_title}
           </span>

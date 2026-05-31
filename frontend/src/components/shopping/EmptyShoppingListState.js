@@ -17,9 +17,7 @@ export function EmptyShoppingListState() {
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-light text-brand">
         <ShoppingCart className="h-6 w-6" strokeWidth={1.75} />
       </div>
-      <h2 className="font-serif text-display text-ink">
-        Tu lista está vacía
-      </h2>
+      <h2 className="font-serif text-display text-ink">Tu lista está vacía</h2>
       <p className="max-w-[280px] text-body text-ink-secondary">
         Cuando a una receta le falten ingredientes, podrás añadirlos aquí
         automáticamente.

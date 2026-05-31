@@ -12,11 +12,31 @@ import {
  * Active state uses brand terracotta for icon + label.
  */
 const TABS = [
-  { to: "/pantry",        label: "Despensa",         testId: "tab-pantry",         Icon: Archive },
-  { to: "/my-recipes",    label: "Mis Recetas",      testId: "tab-my-recipes",     Icon: NotebookPen },
-  { to: "/library",       label: "Biblioteca",       testId: "tab-library",        Icon: Bookmark },
-  { to: "/shopping-list", label: "Lista de la Compra", testId: "tab-shopping-list", Icon: ShoppingBasket },
-  { to: "/discover",      label: "Descubrir",        testId: "tab-discover",       Icon: Compass },
+  { to: "/pantry", label: "Despensa", testId: "tab-pantry", Icon: Archive },
+  {
+    to: "/my-recipes",
+    label: "Mis Recetas",
+    testId: "tab-my-recipes",
+    Icon: NotebookPen,
+  },
+  {
+    to: "/library",
+    label: "Biblioteca",
+    testId: "tab-library",
+    Icon: Bookmark,
+  },
+  {
+    to: "/shopping-list",
+    label: "Lista de la Compra",
+    testId: "tab-shopping-list",
+    Icon: ShoppingBasket,
+  },
+  {
+    to: "/discover",
+    label: "Descubrir",
+    testId: "tab-discover",
+    Icon: Compass,
+  },
 ];
 
 export function BottomTabBar() {

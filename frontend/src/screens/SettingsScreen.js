@@ -54,7 +54,9 @@ export default function SettingsScreen() {
             <Mail className="h-4 w-4" />
           </div>
           <div className="flex min-w-0 flex-col">
-            <span className="text-caption text-ink-secondary">Método de acceso</span>
+            <span className="text-caption text-ink-secondary">
+              Método de acceso
+            </span>
             <span className="text-body text-ink">Email y contraseña</span>
           </div>
         </div>

@@ -69,7 +69,9 @@ function NutritionCard({ recipe }) {
       className="flex flex-col gap-3 rounded-lg border border-line bg-surface px-4 py-3"
     >
       <header className="flex items-center justify-between">
-        <h3 className="font-serif text-title text-ink">Estimación por ración</h3>
+        <h3 className="font-serif text-title text-ink">
+          Estimación por ración
+        </h3>
         {recipe.has_pending_ingredients ? (
           <span
             title="Algunos ingredientes están pendientes de validar"
@@ -98,7 +100,9 @@ function NutritionCard({ recipe }) {
                 {v.label}
               </span>
               <span className="text-body font-semibold text-ink">
-                {v.value == null ? "—" : `${formatQuantity(v.value)}${v.unit ?? ""}`}
+                {v.value == null
+                  ? "—"
+                  : `${formatQuantity(v.value)}${v.unit ?? ""}`}
               </span>
             </li>
           ))}
@@ -223,7 +227,9 @@ function IngredientsList({ rows, missingMap }) {
                 </span>
               ) : null}
               {r.notes ? (
-                <span className="text-caption text-ink-secondary">{r.notes}</span>
+                <span className="text-caption text-ink-secondary">
+                  {r.notes}
+                </span>
               ) : null}
             </div>
           </li>
@@ -242,10 +248,7 @@ function StepsList({ steps }) {
     );
   }
   return (
-    <ol
-      data-testid="library-recipe-steps"
-      className="flex flex-col gap-3"
-    >
+    <ol data-testid="library-recipe-steps" className="flex flex-col gap-3">
       {steps.map((s, idx) => (
         <li
           key={s.id ?? idx}
@@ -253,7 +256,9 @@ function StepsList({ steps }) {
           className="flex items-start gap-3 rounded-lg border border-line bg-surface px-4 py-3"
         >
           <span className="font-serif text-title text-brand">{idx + 1}.</span>
-          <p className="whitespace-pre-line text-body text-ink">{s.instruction}</p>
+          <p className="whitespace-pre-line text-body text-ink">
+            {s.instruction}
+          </p>
         </li>
       ))}
     </ol>
@@ -279,7 +284,12 @@ function StepsList({ steps }) {
  *   preview the discount, let the user adjust, and on confirm subtracts
  *   from the pantry + records a cooking_history row (P6).
  */
-function RecipeActions({ recipe, missingIngredients, recipeIngredients, onCooked }) {
+function RecipeActions({
+  recipe,
+  missingIngredients,
+  recipeIngredients,
+  onCooked,
+}) {
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -300,10 +310,10 @@ function RecipeActions({ recipe, missingIngredients, recipeIngredients, onCooked
 
   // Catalog vs quarantine partition based on the engine's response shape.
   const catalogMissing = (missingIngredients || []).filter(
-    (m) => m && m.ingredient_id && !m.is_pending && !m.user_ingredient_id
+    (m) => m && m.ingredient_id && !m.is_pending && !m.user_ingredient_id,
   );
   const pendingMissing = (missingIngredients || []).filter(
-    (m) => m && (m.is_pending || m.user_ingredient_id)
+    (m) => m && (m.is_pending || m.user_ingredient_id),
   );
 
   const hasMissing = (missingIngredients || []).length > 0;
@@ -321,7 +331,7 @@ function RecipeActions({ recipe, missingIngredients, recipeIngredients, onCooked
       return Number.isFinite(n) ? n : null;
     }
     const ri = (recipeIngredients || []).find(
-      (r) => r.ingredient_id === mi.ingredient_id
+      (r) => r.ingredient_id === mi.ingredient_id,
     );
     if (!ri) return null;
     const base = await convertToBase(ri.ingredient_id, ri.quantity, ri.unit_id);
@@ -387,11 +397,11 @@ function RecipeActions({ recipe, missingIngredients, recipeIngredients, onCooked
 
     if (added === 0 && pendingMissing.length > 0) {
       setSkippedCaption(
-        "Algunos ingredientes pendientes de validar no se pueden añadir a la lista todavía."
+        "Algunos ingredientes pendientes de validar no se pueden añadir a la lista todavía.",
       );
     } else if (added > 0 && pendingMissing.length > 0) {
       setSkippedCaption(
-        "Algunos ingredientes pendientes de validar no se pueden añadir a la lista todavía."
+        "Algunos ingredientes pendientes de validar no se pueden añadir a la lista todavía.",
       );
       showToast("Añadido a tu lista de la compra");
     } else if (added > 0) {
@@ -487,7 +497,7 @@ function RecipeActions({ recipe, missingIngredients, recipeIngredients, onCooked
             parts.push(
               discountedCount === 1
                 ? "1 ingrediente descontado"
-                : `${discountedCount} ingredientes descontados`
+                : `${discountedCount} ingredientes descontados`,
             );
           }
           const msg = parts.length
@@ -540,7 +550,7 @@ export default function LibraryRecipeDetailScreen() {
     const { data: r, error: rErr } = await supabase
       .from("recipes")
       .select(
-        "id, user_id, title, difficulty, prep_time_minutes, servings, status, has_pending_ingredients, kcal_per_serving, protein_per_serving, carbs_per_serving, fat_per_serving, fiber_per_serving, is_draft"
+        "id, user_id, title, difficulty, prep_time_minutes, servings, status, has_pending_ingredients, kcal_per_serving, protein_per_serving, carbs_per_serving, fat_per_serving, fiber_per_serving, is_draft",
       )
       .eq("id", id)
       .maybeSingle();
@@ -566,7 +576,7 @@ export default function LibraryRecipeDetailScreen() {
       supabase
         .from("recipe_ingredients")
         .select(
-          "id, ingredient_id, user_ingredient_id, quantity, unit_id, is_key, notes, sort_order, ingredients(name), user_ingredients(name), units(name, symbol)"
+          "id, ingredient_id, user_ingredient_id, quantity, unit_id, is_key, notes, sort_order, ingredients(name), user_ingredients(name), units(name, symbol)",
         )
         .eq("recipe_id", id)
         .order("sort_order", { ascending: true }),
@@ -598,13 +608,16 @@ export default function LibraryRecipeDetailScreen() {
         is_pending: !!row.user_ingredient_id,
         notes: row.notes,
         sort_order: row.sort_order,
-      }))
+      })),
     );
     setSteps(stepsRes.data || []);
 
     if (statusRes.error) {
       // eslint-disable-next-line no-console
-      console.error("[library-detail] compute_recipe_status error", statusRes.error);
+      console.error(
+        "[library-detail] compute_recipe_status error",
+        statusRes.error,
+      );
       // Default to orange on RPC failure so the user is never misled into
       // thinking they can cook the recipe.
       setStatus("orange");
@@ -614,12 +627,14 @@ export default function LibraryRecipeDetailScreen() {
       const rawStatus = row?.status;
       // Same defensive normalization as LIB-001: unknown -> orange.
       setStatus(
-        rawStatus === "green" || rawStatus === "yellow" || rawStatus === "orange"
+        rawStatus === "green" ||
+          rawStatus === "yellow" ||
+          rawStatus === "orange"
           ? rawStatus
-          : "orange"
+          : "orange",
       );
       setMissingIngredients(
-        Array.isArray(row?.missing_ingredients) ? row.missing_ingredients : []
+        Array.isArray(row?.missing_ingredients) ? row.missing_ingredients : [],
       );
     }
     setLoading(false);
@@ -677,7 +692,7 @@ export default function LibraryRecipeDetailScreen() {
         key="time"
         Icon={Clock}
         testId="library-recipe-meta-time"
-      >{`${recipe.prep_time_minutes} min`}</MetadataChip>
+      >{`${recipe.prep_time_minutes} min`}</MetadataChip>,
     );
   }
   meta.push(
@@ -687,14 +702,14 @@ export default function LibraryRecipeDetailScreen() {
       testId="library-recipe-meta-difficulty"
     >
       {DIFFICULTY_LABEL[recipe.difficulty] ?? recipe.difficulty}
-    </MetadataChip>
+    </MetadataChip>,
   );
   meta.push(
     <MetadataChip
       key="servings"
       Icon={Users}
       testId="library-recipe-meta-servings"
-    >{`${recipe.servings} raciones`}</MetadataChip>
+    >{`${recipe.servings} raciones`}</MetadataChip>,
   );
 
   return (

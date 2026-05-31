@@ -88,7 +88,9 @@ export function AddShoppingItemModal({ open, onClose, onSaved }) {
         setResults(src.slice(0, 20));
       } else {
         const n = normalize(q);
-        setResults(src.filter((r) => normalize(r.name).includes(n)).slice(0, 20));
+        setResults(
+          src.filter((r) => normalize(r.name).includes(n)).slice(0, 20),
+        );
       }
       setSearching(false);
     }, 200);
@@ -114,7 +116,8 @@ export function AddShoppingItemModal({ open, onClose, onSaved }) {
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [quantity]);
 
-  const canSave = !!selected && parsedQuantity != null && !!unitId && !submitting;
+  const canSave =
+    !!selected && parsedQuantity != null && !!unitId && !submitting;
 
   const handlePickResult = (row) => {
     setSelected({ id: row.id, name: row.name, base_unit: row.base_unit });
@@ -160,13 +163,15 @@ export function AddShoppingItemModal({ open, onClose, onSaved }) {
         return;
       }
     } else {
-      const { error: insErr } = await supabase.from("shopping_list_items").insert({
-        user_id: user.id,
-        ingredient_id: selected.id,
-        needed_quantity: baseQty,
-        is_checked: false,
-        added_from_recipe_id: null,
-      });
+      const { error: insErr } = await supabase
+        .from("shopping_list_items")
+        .insert({
+          user_id: user.id,
+          ingredient_id: selected.id,
+          needed_quantity: baseQty,
+          is_checked: false,
+          added_from_recipe_id: null,
+        });
       if (insErr) {
         setSubmitting(false);
         setErrorMsg("No se pudo añadir el ítem. Inténtalo más tarde.");
@@ -185,7 +190,9 @@ export function AddShoppingItemModal({ open, onClose, onSaved }) {
       open={open}
       onClose={onClose}
       testId="add-shopping-modal"
-      title={step === "form" ? selected?.name ?? "Añadir ítem" : "Añadir ítem"}
+      title={
+        step === "form" ? (selected?.name ?? "Añadir ítem") : "Añadir ítem"
+      }
       subtitle={
         step === "form" ? "Indica cuánto necesitas comprar." : undefined
       }
@@ -250,17 +257,16 @@ export function AddShoppingItemModal({ open, onClose, onSaved }) {
               </li>
             ) : (
               results.map((r) => (
-                <li
-                  key={r.id}
-                  className="border-b border-line last:border-b-0"
-                >
+                <li key={r.id} className="border-b border-line last:border-b-0">
                   <button
                     type="button"
                     onClick={() => handlePickResult(r)}
                     data-testid={`add-shopping-result-${r.id}`}
                     className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-brand-light"
                   >
-                    <span className="truncate text-body text-ink">{r.name}</span>
+                    <span className="truncate text-body text-ink">
+                      {r.name}
+                    </span>
                     <span className="ml-2 text-caption text-ink-secondary">
                       {r.base_unit}
                     </span>

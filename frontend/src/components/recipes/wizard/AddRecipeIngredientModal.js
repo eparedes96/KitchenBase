@@ -89,7 +89,7 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
       const { data } = await supabase
         .from("ingredients")
         .select(
-          "id, name, base_unit, is_key_default, category_id, ingredient_categories!inner(name)"
+          "id, name, base_unit, is_key_default, category_id, ingredient_categories!inner(name)",
         )
         .order("name", { ascending: true });
       setAllCatalog(data || []);
@@ -108,7 +108,9 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
         setResults(source.slice(0, 20));
       } else {
         const n = normalize(q);
-        setResults(source.filter((r) => normalize(r.name).includes(n)).slice(0, 20));
+        setResults(
+          source.filter((r) => normalize(r.name).includes(n)).slice(0, 20),
+        );
       }
       setSearching(false);
     }, 200);
@@ -221,7 +223,7 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
     setSubmitting(false);
     if (error || !data) {
       setErrorMsg(
-        "No se pudo proponer el ingrediente. Comprueba tu conexión e inténtalo de nuevo."
+        "No se pudo proponer el ingrediente. Comprueba tu conexión e inténtalo de nuevo.",
       );
       return;
     }
@@ -288,8 +290,8 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
         step === "create"
           ? "Crear ingrediente nuevo"
           : step === "form"
-          ? selected?.name ?? "Añadir ingrediente"
-          : "Añadir ingrediente"
+            ? (selected?.name ?? "Añadir ingrediente")
+            : "Añadir ingrediente"
       }
       subtitle={step === "form" ? selected?.category_name : undefined}
       footer={
@@ -356,7 +358,9 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
             className="flex flex-col rounded-md border border-line bg-surface"
           >
             {searching ? (
-              <li className="px-4 py-3 text-caption text-ink-secondary">Buscando…</li>
+              <li className="px-4 py-3 text-caption text-ink-secondary">
+                Buscando…
+              </li>
             ) : (results || []).length === 0 && query.trim() === "" ? (
               <li className="px-4 py-6 text-center text-caption text-ink-secondary">
                 Empieza a escribir para buscar.
@@ -393,7 +397,9 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
                   </span>
                   <span className="flex flex-col">
                     <span>Crear ingrediente nuevo</span>
-                    <span className="text-caption text-ink-secondary">“{query.trim()}”</span>
+                    <span className="text-caption text-ink-secondary">
+                      “{query.trim()}”
+                    </span>
                   </span>
                 </button>
               </li>
@@ -416,7 +422,9 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
           </button>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-caption font-medium text-ink-secondary">Nombre</span>
+            <span className="text-caption font-medium text-ink-secondary">
+              Nombre
+            </span>
             <input
               type="text"
               value={createName}
@@ -427,7 +435,9 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-caption font-medium text-ink-secondary">Categoría</span>
+            <span className="text-caption font-medium text-ink-secondary">
+              Categoría
+            </span>
             <select
               value={createCategoryId}
               onChange={(e) => setCreateCategoryId(e.target.value)}
@@ -436,13 +446,17 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
             >
               <option value="">Selecciona una categoría…</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
           </label>
 
           <fieldset className="flex flex-col gap-1.5">
-            <legend className="text-caption font-medium text-ink-secondary">Unidad base</legend>
+            <legend className="text-caption font-medium text-ink-secondary">
+              Unidad base
+            </legend>
             <div className="flex w-full rounded-md border border-line bg-surface p-1">
               {[
                 { v: "g", label: "Gramos (g)" },
@@ -466,11 +480,16 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
           </fieldset>
 
           <p className="rounded-md border border-line bg-surface-secondary px-3 py-2 text-caption text-ink-secondary">
-            Tu ingrediente será revisado por el equipo. Mientras tanto, puedes usarlo en esta receta.
+            Tu ingrediente será revisado por el equipo. Mientras tanto, puedes
+            usarlo en esta receta.
           </p>
 
           {errorMsg ? (
-            <p role="alert" data-testid="add-recipe-ing-create-error" className="rounded-md border border-line bg-brand-light px-3 py-2 text-caption text-ink">
+            <p
+              role="alert"
+              data-testid="add-recipe-ing-create-error"
+              className="rounded-md border border-line bg-brand-light px-3 py-2 text-caption text-ink"
+            >
               {errorMsg}
             </p>
           ) : null}
@@ -495,7 +514,9 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
 
           <div className="flex items-end gap-3">
             <label className="flex flex-1 flex-col gap-1.5">
-              <span className="text-caption font-medium text-ink-secondary">Cantidad</span>
+              <span className="text-caption font-medium text-ink-secondary">
+                Cantidad
+              </span>
               <input
                 type="text"
                 inputMode="decimal"
@@ -507,7 +528,9 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
               />
             </label>
             <label className="flex flex-1 flex-col gap-1.5">
-              <span className="text-caption font-medium text-ink-secondary">Unidad</span>
+              <span className="text-caption font-medium text-ink-secondary">
+                Unidad
+              </span>
               <select
                 value={unitId}
                 onChange={(e) => setUnitId(e.target.value)}
@@ -515,7 +538,10 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
                 className="h-11 w-full rounded-md border border-line bg-surface px-3 text-body text-ink focus:border-brand focus:outline-none"
               >
                 {availableUnits.map((u) => (
-                  <option key={u.id} value={u.id}>{`${u.name} (${u.symbol})`}</option>
+                  <option
+                    key={u.id}
+                    value={u.id}
+                  >{`${u.name} (${u.symbol})`}</option>
                 ))}
               </select>
             </label>
@@ -549,7 +575,11 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
           </div>
 
           {errorMsg ? (
-            <p role="alert" data-testid="add-recipe-ing-error" className="rounded-md border border-line bg-brand-light px-3 py-2 text-caption text-ink">
+            <p
+              role="alert"
+              data-testid="add-recipe-ing-error"
+              className="rounded-md border border-line bg-brand-light px-3 py-2 text-caption text-ink"
+            >
               {errorMsg}
             </p>
           ) : null}

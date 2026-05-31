@@ -4,7 +4,10 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/context/AuthContext";
 import { matches } from "@/lib/textUtils";
 import { track } from "@/lib/analytics";
-import { LOCATION_LABEL, LOCATION_ORDER } from "@/components/pantry/locationConfig";
+import {
+  LOCATION_LABEL,
+  LOCATION_ORDER,
+} from "@/components/pantry/locationConfig";
 import { PantryItemRow } from "@/components/pantry/PantryItemRow";
 import { EmptyPantryState } from "@/components/pantry/EmptyPantryState";
 import { AddPantryItemModal } from "@/components/pantry/AddPantryItemModal";
@@ -36,7 +39,7 @@ export default function PantryScreen() {
     const { data, error } = await supabase
       .from("pantry_items")
       .select(
-        "id, ingredient_id, user_ingredient_id, quantity, unit_id, location, is_basic, updated_at, ingredients(id, name, base_unit, category_id, ingredient_categories(id, name, sort_order)), user_ingredients(id, name, base_unit), units(id, name, symbol)"
+        "id, ingredient_id, user_ingredient_id, quantity, unit_id, location, is_basic, updated_at, ingredients(id, name, base_unit, category_id, ingredient_categories(id, name, sort_order)), user_ingredients(id, name, base_unit), units(id, name, symbol)",
       )
       .eq("user_id", user.id);
     if (error) {
@@ -76,7 +79,7 @@ export default function PantryScreen() {
       };
     });
     flat.sort((a, b) =>
-      (a.ingredient.name || "").localeCompare(b.ingredient.name || "", "es")
+      (a.ingredient.name || "").localeCompare(b.ingredient.name || "", "es"),
     );
     setItems(flat);
     setLoading(false);
@@ -103,7 +106,7 @@ export default function PantryScreen() {
           table: "pantry_items",
           filter: `user_id=eq.${user.id}`,
         },
-        () => fetchItems()
+        () => fetchItems(),
       )
       .subscribe();
     return () => {

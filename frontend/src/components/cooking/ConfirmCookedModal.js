@@ -62,7 +62,13 @@ function scaleQty(baseQty, factor) {
   return Math.round(v * 100) / 100;
 }
 
-export function ConfirmCookedModal({ open, recipe, ingredients, onClose, onConfirmed }) {
+export function ConfirmCookedModal({
+  open,
+  recipe,
+  ingredients,
+  onClose,
+  onConfirmed,
+}) {
   const { user } = useAuth();
 
   const [servings, setServings] = useState(recipe?.servings ?? 1);
@@ -132,8 +138,8 @@ export function ConfirmCookedModal({ open, recipe, ingredients, onClose, onConfi
     const factor = servings / recipe.servings;
     setRows((prev) =>
       prev.map((r) =>
-        r.overridden ? r : { ...r, currentQty: scaleQty(r.baseQty, factor) }
-      )
+        r.overridden ? r : { ...r, currentQty: scaleQty(r.baseQty, factor) },
+      ),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servings, open, recipe?.servings]);
@@ -142,16 +148,14 @@ export function ConfirmCookedModal({ open, recipe, ingredients, onClose, onConfi
   const updateRowQty = (riId, newQty) => {
     setRows((prev) =>
       prev.map((r) =>
-        r.riId === riId
-          ? { ...r, currentQty: newQty, overridden: true }
-          : r
-      )
+        r.riId === riId ? { ...r, currentQty: newQty, overridden: true } : r,
+      ),
     );
   };
 
   const toggleRowRemoved = (riId) => {
     setRows((prev) =>
-      prev.map((r) => (r.riId === riId ? { ...r, removed: !r.removed } : r))
+      prev.map((r) => (r.riId === riId ? { ...r, removed: !r.removed } : r)),
     );
   };
 
@@ -169,7 +173,7 @@ export function ConfirmCookedModal({ open, recipe, ingredients, onClose, onConfi
       .select("id, name")
       .in("name", ["gramo", "mililitro"]);
     const baseUnitIdByName = Object.fromEntries(
-      (baseUnitsRows || []).map((u) => [u.name, u.id])
+      (baseUnitsRows || []).map((u) => [u.name, u.id]),
     );
 
     let discountedCount = 0;
@@ -193,18 +197,18 @@ export function ConfirmCookedModal({ open, recipe, ingredients, onClose, onConfi
       const cookedBaseQty = await convertToBase(
         row.ingredientId,
         Number(row.currentQty),
-        row.unitId
+        row.unitId,
       );
       if (cookedBaseQty == null || cookedBaseQty <= 0) continue;
 
       const existingBaseQty = await convertToBase(
         row.ingredientId,
         Number(pantryRow.quantity ?? 0),
-        pantryRow.unit_id
+        pantryRow.unit_id,
       );
       const newBase = Math.max(
         0,
-        Number(existingBaseQty ?? 0) - Number(cookedBaseQty)
+        Number(existingBaseQty ?? 0) - Number(cookedBaseQty),
       );
 
       // Determine which base unit id to write (gramo vs mililitro). Look up
@@ -219,8 +223,7 @@ export function ConfirmCookedModal({ open, recipe, ingredients, onClose, onConfi
         .select("base_unit")
         .eq("id", row.ingredientId)
         .single();
-      const baseUnitName =
-        ingMeta?.base_unit === "ml" ? "mililitro" : "gramo";
+      const baseUnitName = ingMeta?.base_unit === "ml" ? "mililitro" : "gramo";
       if (baseUnitIdByName[baseUnitName]) {
         writeUnitId = baseUnitIdByName[baseUnitName];
       }
@@ -248,7 +251,7 @@ export function ConfirmCookedModal({ open, recipe, ingredients, onClose, onConfi
       console.error("[cooking] cooking_history insert failed", chErr);
       setSubmitting(false);
       setErrorMsg(
-        "No se pudo registrar el cocinado. La despensa se actualizó correctamente."
+        "No se pudo registrar el cocinado. La despensa se actualizó correctamente.",
       );
       // Even though history failed, the pantry writes already happened. We
       // still close so the user isn't trapped, but we surface the error.
@@ -273,7 +276,7 @@ export function ConfirmCookedModal({ open, recipe, ingredients, onClose, onConfi
     const skippedPending = rows.filter((r) => r.isPending).length;
     const removed = rows.filter((r) => r.removed).length;
     const willDiscount = rows.filter(
-      (r) => !r.removed && !r.isBasic && !r.isPending && r.hasPantryRow
+      (r) => !r.removed && !r.isBasic && !r.isPending && r.hasPantryRow,
     ).length;
     return { total, willDiscount, skippedBasic, skippedPending, removed };
   }, [rows]);
@@ -322,10 +325,7 @@ export function ConfirmCookedModal({ open, recipe, ingredients, onClose, onConfi
             Se descontará de tu despensa
           </h3>
 
-          <ul
-            data-testid="confirm-cooked-rows"
-            className="flex flex-col gap-2"
-          >
+          <ul data-testid="confirm-cooked-rows" className="flex flex-col gap-2">
             {rows.map((row) => (
               <CookedRow
                 key={row.riId}

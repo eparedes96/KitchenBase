@@ -53,7 +53,9 @@ export function ConfirmDialog({
       <div className="relative z-10 w-full max-w-[340px] rounded-lg border border-line bg-surface p-5 animate-fade-in">
         <h3 className="font-serif text-title text-ink">{title}</h3>
         {description ? (
-          <p className="mt-1.5 text-caption text-ink-secondary">{description}</p>
+          <p className="mt-1.5 text-caption text-ink-secondary">
+            {description}
+          </p>
         ) : null}
         <div className="mt-5 flex flex-col gap-2">
           <button
@@ -79,6 +81,6 @@ export function ConfirmDialog({
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

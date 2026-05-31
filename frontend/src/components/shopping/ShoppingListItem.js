@@ -73,7 +73,8 @@ export function ShoppingListItem({ item, onCheckClick, onUncheck }) {
               <>
                 {" "}
                 <span className="text-ink-secondary">
-                  · comprado {formatQuantity(item.bought_quantity)} {displayUnit}
+                  · comprado {formatQuantity(item.bought_quantity)}{" "}
+                  {displayUnit}
                 </span>
               </>
             ) : null}

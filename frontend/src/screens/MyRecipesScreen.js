@@ -25,7 +25,7 @@ export default function MyRecipesScreen() {
     const { data, error } = await supabase
       .from("recipes")
       .select(
-        "id, title, status, difficulty, prep_time_minutes, servings, is_draft, draft_step, created_at"
+        "id, title, status, difficulty, prep_time_minutes, servings, is_draft, draft_step, created_at",
       )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
@@ -60,7 +60,7 @@ export default function MyRecipesScreen() {
           table: "recipes",
           filter: `user_id=eq.${user.id}`,
         },
-        () => fetchRecipes()
+        () => fetchRecipes(),
       )
       .subscribe();
     return () => {
@@ -90,10 +90,7 @@ export default function MyRecipesScreen() {
     const wasDraft = !!pendingDelete.is_draft;
     const id = pendingDelete.id;
     setPendingDelete(null);
-    const { error } = await supabase
-      .from("recipes")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("recipes").delete().eq("id", id);
     if (!error) {
       track("recipe_deleted_from_list", { was_draft: wasDraft });
       fetchRecipes();

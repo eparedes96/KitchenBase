@@ -75,7 +75,7 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
   }, [open]);
 
   // ----- Sources loaded once per open -----
-  const [catalogRows, setCatalogRows] = useState(null);    // catalog ingredients
+  const [catalogRows, setCatalogRows] = useState(null); // catalog ingredients
   const [quarantineRows, setQuarantineRows] = useState(null); // user's quarantine
 
   useEffect(() => {
@@ -86,7 +86,7 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
         const { data } = await supabase
           .from("ingredients")
           .select(
-            "id, name, base_unit, category_id, ingredient_categories!inner(name)"
+            "id, name, base_unit, category_id, ingredient_categories!inner(name)",
           )
           .order("name", { ascending: true });
         setCatalogRows(data || []);
@@ -143,7 +143,7 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
       } else {
         const n = normalize(q);
         setResults(
-          mergedItems.filter((r) => normalize(r.name).includes(n)).slice(0, 20)
+          mergedItems.filter((r) => normalize(r.name).includes(n)).slice(0, 20),
         );
       }
       setSearching(false);
@@ -274,7 +274,7 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
     const matchKind = duplicateMatch.kind;
     const top = duplicateMatch.row;
     const rest = (results || []).filter(
-      (r) => !(r.id === matchId && r._kind === matchKind)
+      (r) => !(r.id === matchId && r._kind === matchKind),
     );
     return [top, ...rest];
   }, [results, duplicateMatch]);
@@ -328,12 +328,12 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
       .ilike("name", trimmedName)
       .limit(20);
     const catalogDup = (catalogHit || []).find(
-      (r) => (r.name || "").trim().toLowerCase() === dupKey
+      (r) => (r.name || "").trim().toLowerCase() === dupKey,
     );
     if (catalogDup) {
       setSubmitting(false);
       setErrorMsg(
-        "Este ingrediente ya está en el catálogo. Selecciónalo de la búsqueda."
+        "Este ingrediente ya está en el catálogo. Selecciónalo de la búsqueda.",
       );
       track("ingredient_creation_blocked_catalog_match", {
         via: "frontend_save_check",
@@ -349,12 +349,12 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
       .ilike("name", trimmedName)
       .limit(20);
     const quarDup = (quarHit || []).find(
-      (r) => (r.name || "").trim().toLowerCase() === dupKey
+      (r) => (r.name || "").trim().toLowerCase() === dupKey,
     );
     if (quarDup) {
       setSubmitting(false);
       setErrorMsg(
-        "Ya tienes este ingrediente pendiente de validar. Selecciónalo de la búsqueda."
+        "Ya tienes este ingrediente pendiente de validar. Selecciónalo de la búsqueda.",
       );
       track("ingredient_creation_blocked_quarantine_match", {
         via: "frontend_save_check",
@@ -380,7 +380,7 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
         const msg = (error.message || "").toLowerCase();
         if (msg.includes("global catalog")) {
           setErrorMsg(
-            "Este ingrediente ya está en el catálogo. Selecciónalo de la búsqueda."
+            "Este ingrediente ya está en el catálogo. Selecciónalo de la búsqueda.",
           );
           track("ingredient_creation_blocked_catalog_match", {
             via: "backend_trigger",
@@ -390,18 +390,20 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
           msg.includes("you already have")
         ) {
           setErrorMsg(
-            "Ya tienes este ingrediente pendiente de validar. Selecciónalo de la búsqueda."
+            "Ya tienes este ingrediente pendiente de validar. Selecciónalo de la búsqueda.",
           );
           track("ingredient_creation_blocked_quarantine_match", {
             via: "backend_trigger",
           });
         } else {
-          setErrorMsg("Este ingrediente ya existe. Selecciónalo de la búsqueda.");
+          setErrorMsg(
+            "Este ingrediente ya existe. Selecciónalo de la búsqueda.",
+          );
         }
         return;
       }
       setErrorMsg(
-        "No se pudo proponer el ingrediente. Comprueba tu conexión e inténtalo de nuevo."
+        "No se pudo proponer el ingrediente. Comprueba tu conexión e inténtalo de nuevo.",
       );
       return;
     }
@@ -412,7 +414,12 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
     // Refresh quarantineRows cache so the new item appears in subsequent searches
     setQuarantineRows((prev) => [
       ...(prev || []),
-      { id: data.id, name: data.name, base_unit: data.base_unit, status: "pending" },
+      {
+        id: data.id,
+        name: data.name,
+        base_unit: data.base_unit,
+        status: "pending",
+      },
     ]);
 
     // Continue to the form step with this quarantine ingredient selected
@@ -459,7 +466,7 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
     setSubmitting(false);
     if (error) {
       setErrorMsg(
-        "No se pudo guardar. Comprueba tu conexión e inténtalo de nuevo."
+        "No se pudo guardar. Comprueba tu conexión e inténtalo de nuevo.",
       );
       return;
     }
@@ -494,8 +501,8 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
         step === "create"
           ? "Crear ingrediente nuevo"
           : step === "form"
-          ? selected?.name ?? "Añadir ingrediente"
-          : "Añadir ingrediente"
+            ? (selected?.name ?? "Añadir ingrediente")
+            : "Añadir ingrediente"
       }
       subtitle={step === "form" ? selected?.category_name : undefined}
       footer={
@@ -563,7 +570,9 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
             className="flex flex-col rounded-md border border-line bg-surface"
           >
             {searching ? (
-              <li className="px-4 py-3 text-caption text-ink-secondary">Buscando…</li>
+              <li className="px-4 py-3 text-caption text-ink-secondary">
+                Buscando…
+              </li>
             ) : (orderedResults || []).length === 0 && query.trim() === "" ? (
               <li className="px-4 py-6 text-center text-caption text-ink-secondary">
                 Empieza a escribir para buscar.
@@ -588,7 +597,9 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
                       }`}
                     >
                       <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate text-body text-ink">{r.name}</span>
+                        <span className="truncate text-body text-ink">
+                          {r.name}
+                        </span>
                         <span className="truncate text-caption text-ink-secondary">
                           {r.category_name}
                         </span>
@@ -620,7 +631,9 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
                   </span>
                   <span className="flex flex-col">
                     <span>Crear ingrediente nuevo</span>
-                    <span className="text-caption text-ink-secondary">“{query.trim()}”</span>
+                    <span className="text-caption text-ink-secondary">
+                      “{query.trim()}”
+                    </span>
                   </span>
                 </button>
               </li>
@@ -652,7 +665,9 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
           </button>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-caption font-medium text-ink-secondary">Nombre</span>
+            <span className="text-caption font-medium text-ink-secondary">
+              Nombre
+            </span>
             <input
               type="text"
               value={createName}
@@ -663,7 +678,9 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-caption font-medium text-ink-secondary">Categoría</span>
+            <span className="text-caption font-medium text-ink-secondary">
+              Categoría
+            </span>
             <select
               value={createCategoryId}
               onChange={(e) => setCreateCategoryId(e.target.value)}
@@ -747,15 +764,19 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
                 Pendiente
               </span>
               <span>
-                Este ingrediente espera validación. Puedes añadirlo a tu despensa
-                mientras tanto.
+                Este ingrediente espera validación. Puedes añadirlo a tu
+                despensa mientras tanto.
               </span>
             </p>
           ) : null}
 
           <div className="flex items-end gap-3">
-            <label className={`flex flex-1 flex-col gap-1.5 ${isBasic ? "opacity-50" : ""}`}>
-              <span className="text-caption font-medium text-ink-secondary">Cantidad</span>
+            <label
+              className={`flex flex-1 flex-col gap-1.5 ${isBasic ? "opacity-50" : ""}`}
+            >
+              <span className="text-caption font-medium text-ink-secondary">
+                Cantidad
+              </span>
               <input
                 type="text"
                 inputMode="decimal"
@@ -772,8 +793,12 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
                 }`}
               />
             </label>
-            <label className={`flex flex-1 flex-col gap-1.5 ${isBasic ? "opacity-50" : ""}`}>
-              <span className="text-caption font-medium text-ink-secondary">Unidad</span>
+            <label
+              className={`flex flex-1 flex-col gap-1.5 ${isBasic ? "opacity-50" : ""}`}
+            >
+              <span className="text-caption font-medium text-ink-secondary">
+                Unidad
+              </span>
               <select
                 value={unitId}
                 onChange={(e) => setUnitId(e.target.value)}
@@ -787,7 +812,10 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
                 }`}
               >
                 {availableUnits.map((u) => (
-                  <option key={u.id} value={u.id}>{`${u.name} (${u.symbol})`}</option>
+                  <option
+                    key={u.id}
+                    value={u.id}
+                  >{`${u.name} (${u.symbol})`}</option>
                 ))}
               </select>
             </label>
@@ -804,7 +832,9 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
           ) : null}
 
           <fieldset className="flex flex-col gap-1.5">
-            <legend className="text-caption font-medium text-ink-secondary">Ubicación</legend>
+            <legend className="text-caption font-medium text-ink-secondary">
+              Ubicación
+            </legend>
             <div className="flex w-full rounded-md border border-line bg-surface p-1">
               {["fridge", "pantry", "freezer"].map((loc) => (
                 <button

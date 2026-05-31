@@ -55,31 +55,35 @@ export function computeNutritionPerServing(servings, recipeIngredients) {
     const per100 = qtyBase / 100;
 
     const ing = ri.ingredient;
-    if (ing.kcal_per_100 != null)    totals.kcal    += per100 * Number(ing.kcal_per_100);
-    if (ing.protein_per_100 != null) totals.protein += per100 * Number(ing.protein_per_100);
-    if (ing.carbs_per_100 != null)   totals.carbs   += per100 * Number(ing.carbs_per_100);
-    if (ing.fat_per_100 != null)     totals.fat     += per100 * Number(ing.fat_per_100);
-    if (ing.fiber_per_100 != null)   totals.fiber   += per100 * Number(ing.fiber_per_100);
+    if (ing.kcal_per_100 != null)
+      totals.kcal += per100 * Number(ing.kcal_per_100);
+    if (ing.protein_per_100 != null)
+      totals.protein += per100 * Number(ing.protein_per_100);
+    if (ing.carbs_per_100 != null)
+      totals.carbs += per100 * Number(ing.carbs_per_100);
+    if (ing.fat_per_100 != null) totals.fat += per100 * Number(ing.fat_per_100);
+    if (ing.fiber_per_100 != null)
+      totals.fiber += per100 * Number(ing.fiber_per_100);
     anyCounted = true;
   }
 
   if (!anyCounted) {
     return {
-      kcal_per_serving:    null,
+      kcal_per_serving: null,
       protein_per_serving: null,
-      carbs_per_serving:   null,
-      fat_per_serving:     null,
-      fiber_per_serving:   null,
+      carbs_per_serving: null,
+      fat_per_serving: null,
+      fiber_per_serving: null,
     };
   }
 
   const round2 = (x) => Math.round((x / safeServings) * 100) / 100;
 
   return {
-    kcal_per_serving:    round2(totals.kcal),
+    kcal_per_serving: round2(totals.kcal),
     protein_per_serving: round2(totals.protein),
-    carbs_per_serving:   round2(totals.carbs),
-    fat_per_serving:     round2(totals.fat),
-    fiber_per_serving:   round2(totals.fiber),
+    carbs_per_serving: round2(totals.carbs),
+    fat_per_serving: round2(totals.fat),
+    fiber_per_serving: round2(totals.fiber),
   };
 }

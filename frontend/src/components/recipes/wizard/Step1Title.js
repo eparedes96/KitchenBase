@@ -1,12 +1,6 @@
 import { WizardFooter } from "./WizardFooter";
 
-export function Step1Title({
-  title,
-  setTitle,
-  errorMsg,
-  busy,
-  onNext,
-}) {
+export function Step1Title({ title, setTitle, errorMsg, busy, onNext }) {
   const trimmed = (title || "").trim();
   return (
     <div className="flex flex-1 flex-col">

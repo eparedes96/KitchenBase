@@ -16,7 +16,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   // We log instead of throwing so the app still renders a helpful error in UI.
   // eslint-disable-next-line no-console
   console.error(
-    "[Supabase] Missing REACT_APP_SUPABASE_URL or REACT_APP_SUPABASE_ANON_KEY in /app/frontend/.env"
+    "[Supabase] Missing REACT_APP_SUPABASE_URL or REACT_APP_SUPABASE_ANON_KEY in /app/frontend/.env",
   );
 }
 

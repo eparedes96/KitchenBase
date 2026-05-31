@@ -13,7 +13,13 @@ import { track } from "@/lib/analytics";
  * editable (it comes from the catalog) so we only edit quantity, unit,
  * location, and the is_basic flag. Includes destructive "Eliminar".
  */
-export function EditPantryItemModal({ open, item, onClose, onSaved, onDeleted }) {
+export function EditPantryItemModal({
+  open,
+  item,
+  onClose,
+  onSaved,
+  onDeleted,
+}) {
   const [quantity, setQuantity] = useState("");
   const [unitId, setUnitId] = useState("");
   const [availableUnits, setAvailableUnits] = useState([]);
@@ -28,7 +34,9 @@ export function EditPantryItemModal({ open, item, onClose, onSaved, onDeleted })
   // Reset on open
   useEffect(() => {
     if (!open || !item) return;
-    setQuantity(item.quantity == null ? "" : String(item.quantity).replace(".", ","));
+    setQuantity(
+      item.quantity == null ? "" : String(item.quantity).replace(".", ","),
+    );
     setUnitId(item.unit_id ?? "");
     setLocation(item.location ?? "pantry");
     setIsBasic(Boolean(item.is_basic));
@@ -62,7 +70,11 @@ export function EditPantryItemModal({ open, item, onClose, onSaved, onDeleted })
           .eq("ingredient_id", item.ingredient_id);
         (convs || []).forEach((c) => {
           if (c.units && c.units.id !== baseRow?.id) {
-            list.push({ id: c.units.id, name: c.units.name, symbol: c.units.symbol });
+            list.push({
+              id: c.units.id,
+              name: c.units.name,
+              symbol: c.units.symbol,
+            });
           }
         });
       }
@@ -107,7 +119,7 @@ export function EditPantryItemModal({ open, item, onClose, onSaved, onDeleted })
     setSubmitting(false);
     if (error) {
       setErrorMsg(
-        "No se pudieron guardar los cambios. Comprueba tu conexión e inténtalo de nuevo."
+        "No se pudieron guardar los cambios. Comprueba tu conexión e inténtalo de nuevo.",
       );
       return;
     }
@@ -130,7 +142,7 @@ export function EditPantryItemModal({ open, item, onClose, onSaved, onDeleted })
     setConfirmDelete(false);
     if (error) {
       setErrorMsg(
-        "No se pudo eliminar. Comprueba tu conexión e inténtalo de nuevo."
+        "No se pudo eliminar. Comprueba tu conexión e inténtalo de nuevo.",
       );
       return;
     }
@@ -186,7 +198,9 @@ export function EditPantryItemModal({ open, item, onClose, onSaved, onDeleted })
         <div className="flex flex-col gap-4">
           <div className="flex items-end gap-3">
             <label className="flex flex-1 flex-col gap-1.5">
-              <span className="text-caption font-medium text-ink-secondary">Cantidad</span>
+              <span className="text-caption font-medium text-ink-secondary">
+                Cantidad
+              </span>
               <input
                 type="text"
                 inputMode="decimal"
@@ -201,7 +215,9 @@ export function EditPantryItemModal({ open, item, onClose, onSaved, onDeleted })
               />
             </label>
             <label className="flex flex-1 flex-col gap-1.5">
-              <span className="text-caption font-medium text-ink-secondary">Unidad</span>
+              <span className="text-caption font-medium text-ink-secondary">
+                Unidad
+              </span>
               <select
                 value={unitId ?? ""}
                 onChange={(e) => setUnitId(e.target.value)}
@@ -212,7 +228,10 @@ export function EditPantryItemModal({ open, item, onClose, onSaved, onDeleted })
                 }`}
               >
                 {availableUnits.map((u) => (
-                  <option key={u.id} value={u.id}>{`${u.name} (${u.symbol})`}</option>
+                  <option
+                    key={u.id}
+                    value={u.id}
+                  >{`${u.name} (${u.symbol})`}</option>
                 ))}
               </select>
             </label>
@@ -229,7 +248,9 @@ export function EditPantryItemModal({ open, item, onClose, onSaved, onDeleted })
           ) : null}
 
           <fieldset className="flex flex-col gap-1.5">
-            <legend className="text-caption font-medium text-ink-secondary">Ubicación</legend>
+            <legend className="text-caption font-medium text-ink-secondary">
+              Ubicación
+            </legend>
             <div className="flex w-full rounded-md border border-line bg-surface p-1">
               {["fridge", "pantry", "freezer"].map((loc) => (
                 <button

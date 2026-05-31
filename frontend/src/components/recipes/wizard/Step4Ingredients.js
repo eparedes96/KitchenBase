@@ -44,9 +44,7 @@ export function Step4Ingredients({
         <p className="text-caption uppercase tracking-[0.18em] text-ink-secondary">
           4. Ingredientes
         </p>
-        <h1 className="font-serif text-display-lg text-ink">
-          Ingredientes
-        </h1>
+        <h1 className="font-serif text-display-lg text-ink">Ingredientes</h1>
 
         {hasAtLeastOne ? (
           <ul
@@ -55,12 +53,17 @@ export function Step4Ingredients({
           >
             {ingredients.map((ing, idx) => (
               <li
-                key={ing.id ?? `${ing.ingredient_id ?? ing.user_ingredient_id}-${idx}`}
+                key={
+                  ing.id ??
+                  `${ing.ingredient_id ?? ing.user_ingredient_id}-${idx}`
+                }
                 className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0"
                 data-testid={`wizard-step4-row-${idx}`}
               >
                 <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-brand-light text-brand">
-                  <KeyRound className={`h-4 w-4 ${ing.is_key ? "" : "opacity-30"}`} />
+                  <KeyRound
+                    className={`h-4 w-4 ${ing.is_key ? "" : "opacity-30"}`}
+                  />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-body text-ink">
@@ -123,7 +126,11 @@ export function Step4Ingredients({
         </button>
 
         {errorMsg ? (
-          <p role="alert" data-testid="wizard-step4-error" className="rounded-md border border-line bg-brand-light px-3 py-2 text-caption text-ink">
+          <p
+            role="alert"
+            data-testid="wizard-step4-error"
+            className="rounded-md border border-line bg-brand-light px-3 py-2 text-caption text-ink"
+          >
             {errorMsg}
           </p>
         ) : null}

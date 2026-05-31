@@ -8,11 +8,21 @@ function translateSignUpError(error) {
   if (!error) return "";
   const code = (error.code || error.error_code || "").toLowerCase();
   const msg = (error.message || "").toLowerCase();
-  if (code.includes("email_address_invalid") || msg.includes("email address") && msg.includes("invalid"))
+  if (
+    code.includes("email_address_invalid") ||
+    (msg.includes("email address") && msg.includes("invalid"))
+  )
     return "El email no es válido o no está permitido por el servidor.";
-  if (code.includes("user_already_exists") || msg.includes("already") || msg.includes("registered"))
+  if (
+    code.includes("user_already_exists") ||
+    msg.includes("already") ||
+    msg.includes("registered")
+  )
     return "Este email ya está registrado. Inicia sesión.";
-  if (code.includes("weak_password") || (msg.includes("password") && msg.includes("short")))
+  if (
+    code.includes("weak_password") ||
+    (msg.includes("password") && msg.includes("short"))
+  )
     return "La contraseña debe tener al menos 6 caracteres.";
   if (code.includes("over_email_send_rate_limit") || msg.includes("rate limit"))
     return "Demasiados intentos. Espera unos minutos antes de volver a probar.";
@@ -89,7 +99,7 @@ export default function RegisterScreen() {
     setInfo(
       signInErr
         ? "Hemos enviado un email de confirmación. Confírmalo para entrar."
-        : "Cuenta creada. Revisa tu email para confirmarla."
+        : "Cuenta creada. Revisa tu email para confirmarla.",
     );
   };
 
@@ -125,7 +135,9 @@ export default function RegisterScreen() {
           data-testid="register-form"
         >
           <label className="flex flex-col gap-1.5">
-            <span className="text-caption font-medium text-ink-secondary">Email</span>
+            <span className="text-caption font-medium text-ink-secondary">
+              Email
+            </span>
             <input
               type="email"
               inputMode="email"
@@ -163,7 +175,11 @@ export default function RegisterScreen() {
                 }
                 className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-ink-secondary hover:text-brand"
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </button>
             </div>
           </label>

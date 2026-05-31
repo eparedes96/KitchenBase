@@ -5,19 +5,31 @@ import { CheckCircle2, AlertCircle, AlertTriangle } from "lucide-react";
  * Tokens come from tailwind.config.js (semaphore.green/yellow/orange).
  */
 export const SEMAPHORE_COLOR = {
-  green:  { bg: "bg-semaphore-green",  text: "text-semaphore-green",  border: "border-semaphore-green"  },
-  yellow: { bg: "bg-semaphore-yellow", text: "text-semaphore-yellow", border: "border-semaphore-yellow" },
-  orange: { bg: "bg-semaphore-orange", text: "text-semaphore-orange", border: "border-semaphore-orange" },
+  green: {
+    bg: "bg-semaphore-green",
+    text: "text-semaphore-green",
+    border: "border-semaphore-green",
+  },
+  yellow: {
+    bg: "bg-semaphore-yellow",
+    text: "text-semaphore-yellow",
+    border: "border-semaphore-yellow",
+  },
+  orange: {
+    bg: "bg-semaphore-orange",
+    text: "text-semaphore-orange",
+    border: "border-semaphore-orange",
+  },
 };
 
 export const SEMAPHORE_LABEL = {
-  green:  "Puedes cocinar esto ahora",
+  green: "Puedes cocinar esto ahora",
   yellow: "Solo te faltan ingredientes secundarios",
   orange: "Te falta algún ingrediente clave",
 };
 
 export const SEMAPHORE_ICON = {
-  green:  CheckCircle2,
+  green: CheckCircle2,
   yellow: AlertCircle,
   orange: AlertTriangle,
 };
@@ -28,7 +40,8 @@ export const SEMAPHORE_ICON = {
  */
 export function SemaphoreDot({ status, size = "md", testId }) {
   const tokens = SEMAPHORE_COLOR[status] || SEMAPHORE_COLOR.orange;
-  const px = size === "sm" ? "h-2 w-2" : size === "lg" ? "h-3.5 w-3.5" : "h-2.5 w-2.5";
+  const px =
+    size === "sm" ? "h-2 w-2" : size === "lg" ? "h-3.5 w-3.5" : "h-2.5 w-2.5";
   return (
     <span
       aria-label={`Semáforo ${status}`}
@@ -73,7 +86,10 @@ export function SemaphoreBanner({ status, approximate }) {
         <Icon className="h-4 w-4 text-white" strokeWidth={2.25} />
       </span>
       <div className="flex min-w-0 flex-col gap-1">
-        <p data-testid="semaphore-banner-label" className="text-body font-semibold text-ink">
+        <p
+          data-testid="semaphore-banner-label"
+          className="text-body font-semibold text-ink"
+        >
           {label}
         </p>
         {approximate ? (
@@ -81,7 +97,8 @@ export function SemaphoreBanner({ status, approximate }) {
             data-testid="semaphore-banner-approximate"
             className="text-caption text-ink-secondary"
           >
-            Cálculo aproximado — esta receta usa ingredientes pendientes de validar.
+            Cálculo aproximado — esta receta usa ingredientes pendientes de
+            validar.
           </p>
         ) : null}
       </div>

@@ -69,7 +69,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
       const { data: rec, error } = await supabase
         .from("recipes")
         .select(
-          "id, user_id, title, difficulty, prep_time_minutes, servings, status, is_draft, draft_step"
+          "id, user_id, title, difficulty, prep_time_minutes, servings, status, is_draft, draft_step",
         )
         .eq("id", routeRecipeId)
         .maybeSingle();
@@ -88,7 +88,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
       setTitle(rec.title || "");
       setDifficulty(rec.difficulty || "medium");
       setPrepTime(
-        rec.prep_time_minutes != null ? String(rec.prep_time_minutes) : "30"
+        rec.prep_time_minutes != null ? String(rec.prep_time_minutes) : "30",
       );
       setServings(rec.servings ?? 4);
 
@@ -96,7 +96,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
       const ingsRes = await supabase
         .from("recipe_ingredients")
         .select(
-          "id, ingredient_id, user_ingredient_id, quantity, unit_id, is_key, sort_order, ingredients(name, base_unit, category_id, ingredient_categories(name)), user_ingredients(name, base_unit), units(name, symbol)"
+          "id, ingredient_id, user_ingredient_id, quantity, unit_id, is_key, sort_order, ingredients(name, base_unit, category_id, ingredient_categories(name)), user_ingredients(name, base_unit), units(name, symbol)",
         )
         .eq("recipe_id", rec.id)
         .order("sort_order", { ascending: true });
@@ -104,8 +104,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
         id: r.id,
         ingredient_id: r.ingredient_id ?? undefined,
         user_ingredient_id: r.user_ingredient_id ?? undefined,
-        ingredient_name:
-          r.ingredients?.name ?? r.user_ingredients?.name ?? "—",
+        ingredient_name: r.ingredients?.name ?? r.user_ingredients?.name ?? "—",
         category_name: r.ingredients?.ingredient_categories?.name ?? undefined,
         ingredient_base_unit:
           r.ingredients?.base_unit ?? r.user_ingredients?.base_unit ?? "g",
@@ -167,10 +166,10 @@ export default function RecipeWizardScreen({ mode = "new" }) {
       const { data } = await q;
       const target = trimmed.toLowerCase();
       return (data || []).some(
-        (r) => (r.title || "").trim().toLowerCase() === target
+        (r) => (r.title || "").trim().toLowerCase() === target,
       );
     },
-    [user, recipeId]
+    [user, recipeId],
   );
 
   const persistStep1 = async (trimmed) => {
@@ -203,7 +202,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
       setStep(2);
     } catch (e) {
       setErrorMsg(
-        "No se pudo guardar el título. Comprueba tu conexión e inténtalo de nuevo."
+        "No se pudo guardar el título. Comprueba tu conexión e inténtalo de nuevo.",
       );
     } finally {
       setBusy(false);
@@ -241,7 +240,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
     setBusy(false);
     if (error) {
       setErrorMsg(
-        "No se pudo guardar. Comprueba tu conexión e inténtalo de nuevo."
+        "No se pudo guardar. Comprueba tu conexión e inténtalo de nuevo.",
       );
       return;
     }
@@ -262,7 +261,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
     setBusy(false);
     if (error) {
       setErrorMsg(
-        "No se pudo guardar. Comprueba tu conexión e inténtalo de nuevo."
+        "No se pudo guardar. Comprueba tu conexión e inténtalo de nuevo.",
       );
       return;
     }
@@ -279,7 +278,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
         .update({ has_pending_ingredients: hasPending })
         .eq("id", recipeId);
     },
-    [recipeId]
+    [recipeId],
   );
 
   const handleAddIngredient = async (payload) => {
@@ -301,7 +300,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
       .single();
     if (error || !data) {
       setErrorMsg(
-        "No se pudo añadir el ingrediente. Comprueba tu conexión e inténtalo de nuevo."
+        "No se pudo añadir el ingrediente. Comprueba tu conexión e inténtalo de nuevo.",
       );
       return;
     }
@@ -327,7 +326,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
     setErrorMsg("");
     if (!row.id) return;
     const optimistic = ingredients.map((r) =>
-      r.id === row.id ? { ...r, is_key: !!next } : r
+      r.id === row.id ? { ...r, is_key: !!next } : r,
     );
     setIngredients(optimistic);
     const { error } = await supabase
@@ -389,7 +388,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
     if (del.error) {
       setBusy(false);
       setErrorMsg(
-        "No se pudo guardar la receta. Comprueba tu conexión e inténtalo de nuevo."
+        "No se pudo guardar la receta. Comprueba tu conexión e inténtalo de nuevo.",
       );
       return;
     }
@@ -402,7 +401,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
     if (ins.error) {
       setBusy(false);
       setErrorMsg(
-        "No se pudieron guardar los pasos. Comprueba tu conexión e inténtalo de nuevo."
+        "No se pudieron guardar los pasos. Comprueba tu conexión e inténtalo de nuevo.",
       );
       return;
     }
@@ -416,7 +415,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
       const { data: cat } = await supabase
         .from("ingredients")
         .select(
-          "id, base_unit, kcal_per_100, protein_per_100, carbs_per_100, fat_per_100, fiber_per_100"
+          "id, base_unit, kcal_per_100, protein_per_100, carbs_per_100, fat_per_100, fiber_per_100",
         )
         .in("id", catalogIds);
       nutritionByIngId = new Map((cat || []).map((c) => [c.id, c]));
@@ -424,7 +423,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
     const enriched = ingredients.map((row) => ({
       ...row,
       ingredient: row.ingredient_id
-        ? nutritionByIngId.get(row.ingredient_id) ?? null
+        ? (nutritionByIngId.get(row.ingredient_id) ?? null)
         : null,
     }));
     const nutrition = computeNutritionPerServing(servings, enriched);
@@ -443,7 +442,7 @@ export default function RecipeWizardScreen({ mode = "new" }) {
     setBusy(false);
     if (upd.error) {
       setErrorMsg(
-        "No se pudo finalizar la receta. Comprueba tu conexión e inténtalo de nuevo."
+        "No se pudo finalizar la receta. Comprueba tu conexión e inténtalo de nuevo.",
       );
       return;
     }
@@ -595,7 +594,10 @@ export default function RecipeWizardScreen({ mode = "new" }) {
 
   return (
     <MobileFrame>
-      <div data-testid="recipe-wizard" className="flex min-h-[100dvh] flex-1 flex-col">
+      <div
+        data-testid="recipe-wizard"
+        className="flex min-h-[100dvh] flex-1 flex-col"
+      >
         <WizardHeader
           currentStep={step}
           totalSteps={TOTAL_STEPS}
@@ -608,13 +610,9 @@ export default function RecipeWizardScreen({ mode = "new" }) {
 
       <ConfirmDialog
         open={confirmClose}
-        title={
-          recipeId ? "¿Salir del asistente?" : "¿Salir sin guardar?"
-        }
+        title={recipeId ? "¿Salir del asistente?" : "¿Salir sin guardar?"}
         description={
-          recipeId
-            ? "Tus cambios se han guardado como borrador."
-            : undefined
+          recipeId ? "Tus cambios se han guardado como borrador." : undefined
         }
         confirmLabel={recipeId ? "Salir" : "Salir sin guardar"}
         cancelLabel="Continuar editando"

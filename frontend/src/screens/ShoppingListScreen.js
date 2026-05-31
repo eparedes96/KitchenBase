@@ -70,7 +70,7 @@ export default function ShoppingListScreen() {
       const { data, error } = await supabase
         .from("shopping_list_items")
         .select(
-          "id, ingredient_id, needed_quantity, bought_quantity, is_checked, added_from_recipe_id, added_at, checked_at, ingredients(name, base_unit)"
+          "id, ingredient_id, needed_quantity, bought_quantity, is_checked, added_from_recipe_id, added_at, checked_at, ingredients(name, base_unit)",
         )
         .eq("user_id", user.id);
       if (error) {
@@ -101,7 +101,7 @@ export default function ShoppingListScreen() {
         track("shopping_list_viewed", { item_count: mapped.length });
       }
     },
-    [user]
+    [user],
   );
 
   useEffect(() => {
@@ -147,15 +147,22 @@ export default function ShoppingListScreen() {
     setItems((prev) =>
       prev.map((it) =>
         it.id === item.id
-          ? { ...it, is_checked: false, bought_quantity: null, checked_at: null }
-          : it
-      )
+          ? {
+              ...it,
+              is_checked: false,
+              bought_quantity: null,
+              checked_at: null,
+            }
+          : it,
+      ),
     );
   };
 
   const handleBoughtSaved = (updatedItem) => {
     setItems((prev) =>
-      prev.map((it) => (it.id === updatedItem.id ? { ...it, ...updatedItem } : it))
+      prev.map((it) =>
+        it.id === updatedItem.id ? { ...it, ...updatedItem } : it,
+      ),
     );
     setPendingItem(null);
     showToast("Añadido a tu despensa.");
@@ -176,7 +183,7 @@ export default function ShoppingListScreen() {
     if (unchecked.length > 0) {
       for (const it of unchecked) {
         lines.push(
-          `- ${formatQuantity(it.needed_quantity)} ${it.base_unit} ${it.name}`
+          `- ${formatQuantity(it.needed_quantity)} ${it.base_unit} ${it.name}`,
         );
       }
     }
@@ -185,7 +192,7 @@ export default function ShoppingListScreen() {
       lines.push("Ya comprado:");
       for (const it of checked) {
         lines.push(
-          `[x] ${formatQuantity(it.needed_quantity)} ${it.base_unit} ${it.name}`
+          `[x] ${formatQuantity(it.needed_quantity)} ${it.base_unit} ${it.name}`,
         );
       }
     }
@@ -293,10 +300,7 @@ export default function ShoppingListScreen() {
 
       <div className="flex-1 overflow-y-auto">
         {unchecked.length > 0 ? (
-          <ul
-            data-testid="shopping-list-unchecked"
-            className="flex flex-col"
-          >
+          <ul data-testid="shopping-list-unchecked" className="flex flex-col">
             {unchecked.map((it) => (
               <ShoppingListItem
                 key={it.id}
@@ -317,10 +321,7 @@ export default function ShoppingListScreen() {
               </span>
               <div className="h-px flex-1 bg-line" />
             </div>
-            <ul
-              data-testid="shopping-list-checked"
-              className="flex flex-col"
-            >
+            <ul data-testid="shopping-list-checked" className="flex flex-col">
               {checked.map((it) => (
                 <ShoppingListItem
                   key={it.id}

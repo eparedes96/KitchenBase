@@ -120,6 +120,6 @@ export function BottomSheet({
         }
       `}</style>
     </div>,
-    document.body
+    document.body,
   );
 }

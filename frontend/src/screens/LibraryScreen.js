@@ -55,7 +55,7 @@ export default function LibraryScreen() {
     // 1) Engine-computed semaphore for the whole library
     const { data: statusRows, error: statusErr } = await supabase.rpc(
       "compute_library_status",
-      { p_user_id: user.id }
+      { p_user_id: user.id },
     );
     if (statusErr) {
       // eslint-disable-next-line no-console
@@ -88,8 +88,7 @@ export default function LibraryScreen() {
         : 0,
       prep_time_minutes: meta[r.recipe_id]?.prep_time_minutes ?? null,
       difficulty: meta[r.recipe_id]?.difficulty ?? null,
-      has_pending_ingredients:
-        !!meta[r.recipe_id]?.has_pending_ingredients,
+      has_pending_ingredients: !!meta[r.recipe_id]?.has_pending_ingredients,
     }));
 
     // 3) Stable order: green -> yellow -> orange, alphabetical within

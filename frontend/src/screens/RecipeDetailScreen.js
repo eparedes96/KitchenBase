@@ -78,7 +78,9 @@ function NutritionCard({ recipe }) {
       className="flex flex-col gap-3 rounded-lg border border-line bg-surface px-4 py-3"
     >
       <header className="flex items-center justify-between">
-        <h3 className="font-serif text-title text-ink">Estimación por ración</h3>
+        <h3 className="font-serif text-title text-ink">
+          Estimación por ración
+        </h3>
         {recipe.has_pending_ingredients ? (
           <span
             title="Algunos ingredientes están pendientes de validar"
@@ -107,7 +109,9 @@ function NutritionCard({ recipe }) {
                 {v.label}
               </span>
               <span className="text-body font-semibold text-ink">
-                {v.value == null ? "—" : `${formatQuantity(v.value)}${v.unit ?? ""}`}
+                {v.value == null
+                  ? "—"
+                  : `${formatQuantity(v.value)}${v.unit ?? ""}`}
               </span>
             </li>
           ))}
@@ -184,10 +188,7 @@ function StepsList({ steps }) {
     );
   }
   return (
-    <ol
-      data-testid="recipe-steps"
-      className="flex flex-col gap-3"
-    >
+    <ol data-testid="recipe-steps" className="flex flex-col gap-3">
       {steps.map((s, idx) => (
         <li
           key={s.id ?? idx}
@@ -195,7 +196,9 @@ function StepsList({ steps }) {
           className="flex items-start gap-3 rounded-lg border border-line bg-surface px-4 py-3"
         >
           <span className="font-serif text-title text-brand">{idx + 1}.</span>
-          <p className="whitespace-pre-line text-body text-ink">{s.instruction}</p>
+          <p className="whitespace-pre-line text-body text-ink">
+            {s.instruction}
+          </p>
         </li>
       ))}
     </ol>
@@ -207,7 +210,11 @@ function OptionsMenu({ open, onClose, onEdit, onDelete, anchorRef }) {
   useEffect(() => {
     if (!open) return undefined;
     const onDoc = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target) && !anchorRef.current?.contains(e.target)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        !anchorRef.current?.contains(e.target)
+      ) {
         onClose();
       }
     };
@@ -303,7 +310,7 @@ export default function RecipeDetailScreen() {
     const { data: r, error: rErr } = await supabase
       .from("recipes")
       .select(
-        "id, user_id, title, difficulty, prep_time_minutes, servings, status, has_pending_ingredients, kcal_per_serving, protein_per_serving, carbs_per_serving, fat_per_serving, fiber_per_serving, is_draft, created_at"
+        "id, user_id, title, difficulty, prep_time_minutes, servings, status, has_pending_ingredients, kcal_per_serving, protein_per_serving, carbs_per_serving, fat_per_serving, fiber_per_serving, is_draft, created_at",
       )
       .eq("id", id)
       .maybeSingle();
@@ -326,7 +333,7 @@ export default function RecipeDetailScreen() {
       supabase
         .from("recipe_ingredients")
         .select(
-          "id, ingredient_id, user_ingredient_id, quantity, unit_id, is_key, notes, sort_order, ingredients(name), user_ingredients(name), units(name, symbol)"
+          "id, ingredient_id, user_ingredient_id, quantity, unit_id, is_key, notes, sort_order, ingredients(name), user_ingredients(name), units(name, symbol)",
         )
         .eq("recipe_id", id)
         .order("sort_order", { ascending: true }),
@@ -358,7 +365,7 @@ export default function RecipeDetailScreen() {
         is_pending: !!row.user_ingredient_id,
         notes: row.notes,
         sort_order: row.sort_order,
-      }))
+      })),
     );
     setSteps(stepsRes.data || []);
     setInLibrary(!!libRes.data);
@@ -460,7 +467,9 @@ export default function RecipeDetailScreen() {
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-light text-brand">
           <AlertTriangle className="h-5 w-5" />
         </div>
-        <h2 className="font-serif text-display text-ink">No se encontró la receta</h2>
+        <h2 className="font-serif text-display text-ink">
+          No se encontró la receta
+        </h2>
         <p className="max-w-[280px] text-body text-ink-secondary">
           Es posible que se haya eliminado o que no tengas acceso.
         </p>
@@ -482,24 +491,20 @@ export default function RecipeDetailScreen() {
         key="time"
         Icon={Clock}
         testId="recipe-meta-time"
-      >{`${recipe.prep_time_minutes} min`}</MetadataChip>
+      >{`${recipe.prep_time_minutes} min`}</MetadataChip>,
     );
   }
   meta.push(
-    <MetadataChip
-      key="difficulty"
-      Icon={Gauge}
-      testId="recipe-meta-difficulty"
-    >
+    <MetadataChip key="difficulty" Icon={Gauge} testId="recipe-meta-difficulty">
       {DIFFICULTY_LABEL[recipe.difficulty] ?? recipe.difficulty}
-    </MetadataChip>
+    </MetadataChip>,
   );
   meta.push(
     <MetadataChip
       key="servings"
       Icon={Users}
       testId="recipe-meta-servings"
-    >{`${recipe.servings} raciones`}</MetadataChip>
+    >{`${recipe.servings} raciones`}</MetadataChip>,
   );
 
   const isProposed = recipe.status === "proposed";
@@ -580,7 +585,10 @@ export default function RecipeDetailScreen() {
       </section>
 
       {/* Actions */}
-      <section className="flex flex-col gap-3 pt-2" data-testid="recipe-detail-actions">
+      <section
+        className="flex flex-col gap-3 pt-2"
+        data-testid="recipe-detail-actions"
+      >
         <button
           type="button"
           onClick={handleToggleLibrary}

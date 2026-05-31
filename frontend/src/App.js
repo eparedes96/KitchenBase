@@ -85,7 +85,10 @@ function App() {
               <Route path="/my-recipes" element={<MyRecipesScreen />} />
               <Route path="/my-recipes/:id" element={<RecipeDetailScreen />} />
               <Route path="/library" element={<LibraryScreen />} />
-              <Route path="/library/:id" element={<LibraryRecipeDetailScreen />} />
+              <Route
+                path="/library/:id"
+                element={<LibraryRecipeDetailScreen />}
+              />
               <Route path="/shopping-list" element={<ShoppingListScreen />} />
               <Route path="/discover" element={<DiscoverScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
