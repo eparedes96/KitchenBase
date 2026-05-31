@@ -1,0 +1,11 @@
+# Build artifacts and dependencies
+build/
+node_modules/
+coverage/
+
+# Generated / vendored UI primitives (shadcn-cli output)
+src/components/ui/
+
+# Lockfiles and minified assets
+yarn.lock
+*.min.*

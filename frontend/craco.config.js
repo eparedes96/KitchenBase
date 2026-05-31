@@ -25,7 +25,9 @@ if (config.enableHealthCheck) {
 let webpackConfig = {
   eslint: {
     configure: {
-      extends: ["plugin:react-hooks/recommended"],
+      // "prettier" (eslint-config-prettier) must stay LAST so it turns off
+      // any formatting rules that would conflict with Prettier.
+      extends: ["plugin:react-hooks/recommended", "prettier"],
       rules: {
         "react-hooks/rules-of-hooks": "error",
         "react-hooks/exhaustive-deps": "warn",
