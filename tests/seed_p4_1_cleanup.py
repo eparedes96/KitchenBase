@@ -12,13 +12,14 @@ Run:
   python3 /app/tests/seed_p4_1_cleanup.py --include-pantry
 """
 import json
+import os
 import sys
 import urllib.parse
 import urllib.request
 import urllib.error
 
 SUPA_URL = "https://ldrxurbtrbjhxmrpdtjr.supabase.co"
-SUPA_KEY = "REVOKED_SECRET"
+SUPA_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 TEST_USER_ID = "18705db9-74a8-4a26-870d-f2a9435fb093"
 
 SEEDED_TITLES = [

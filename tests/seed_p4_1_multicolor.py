@@ -22,7 +22,7 @@ import urllib.parse
 
 # ----- Config ------------------------------------------------------------
 SUPA_URL = "https://ldrxurbtrbjhxmrpdtjr.supabase.co"
-SUPA_KEY = "REVOKED_SECRET"
+SUPA_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 TEST_USER_ID = "18705db9-74a8-4a26-870d-f2a9435fb093"
 
 # Cached UUIDs gathered above
