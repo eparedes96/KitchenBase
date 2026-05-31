@@ -1,0 +1,31 @@
+# Normalize line endings: store everything as LF in the repo.
+# Prevents CRLF/LF churn on Windows and keeps Prettier (endOfLine: lf) stable.
+* text=auto eol=lf
+
+# Explicit text files (LF in the repo and on checkout)
+*.js     text eol=lf
+*.jsx    text eol=lf
+*.ts     text eol=lf
+*.tsx    text eol=lf
+*.json   text eol=lf
+*.css    text eol=lf
+*.scss   text eol=lf
+*.html   text eol=lf
+*.md     text eol=lf
+*.sql    text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.svg    text eol=lf
+
+# Binary files (never touch line endings)
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.webp   binary
+*.woff   binary
+*.woff2  binary
+*.ttf    binary
+*.eot    binary
+*.pdf    binary
