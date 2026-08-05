@@ -1,0 +1,288 @@
+🍳
+
+**KitchenBase**
+
+Product Requirements Document (PRD)
+
+Versión 1.3  ·  Mayo 2026
+
+*Estado: Borrador de trabajo*
+
+*Nota de revisión v1.3 (mayo 2026): se actualizan las referencias operativas de herramienta de prototipado de Lovable a Emergent, que es la herramienta realmente en uso (la decisión histórica D-002 se conserva sin cambios en el Registro de Decisiones). Sin cambios en producto, navegación, semáforo, i18n, analytics ni diseño respecto a v1.2.*
+
+1. Visión General del Producto
+
+1.1 Propósito
+
+KitchenBase es un asistente digital diseñado para centralizar la gestión de la cocina doméstica, optimizar el aprovechamiento de los alimentos disponibles y simplificar la planificación de comidas diarias. La app conecta de forma inteligente tres elementos que hoy los usuarios gestionan por separado: el inventario de su despensa, su recetario personal y su lista de la compra.
+
+1.2 El Problema que Resuelve
+
+La gestión de la cocina doméstica es un proceso fragmentado. Los usuarios saben qué tienen en la nevera, saben qué recetas les gustan y saben qué necesitan comprar, pero ninguna de esas tres informaciones está conectada. El resultado es desperdicio de alimentos, compras innecesarias y la eterna pregunta de "¿qué cocino hoy con lo que tengo?".
+
+KitchenBase elimina esa fricción creando un ciclo cerrado: el inventario alimenta el semáforo de recetas, el semáforo alimenta la lista de la compra, y la lista de la compra actualiza el inventario al volver del supermercado.
+
+1.3 Stack Tecnológico y Estrategia de Desarrollo
+
+El desarrollo sigue una estrategia en dos fases bien diferenciadas. En la primera fase se usa Emergent como herramienta de prototipado y desarrollo asistido: permite generar pantallas, flujos y lógica de backend describiendo la app en lenguaje natural, validando contra una base de datos Supabase real. El objetivo de esta fase es validar el diseño, la navegación y la experiencia de usuario sobre datos reales antes de invertir en el desarrollo nativo definitivo.
+
+*(Nota v1.3: la decisión original D-002 nombraba Lovable como herramienta de prototipado visual. En la práctica el prototipo se está construyendo en Emergent, que combina prototipado y desarrollo asistido con conexión directa a Supabase. Las referencias operativas de este documento se actualizan a Emergent; la decisión histórica D-002 se conserva en el Registro de Decisiones tal como se tomó.)*
+
+En la segunda fase, Claude Code toma el prototipo como referencia y construye la aplicación real sobre React Native con Expo, que es el stack definitivo para la versión móvil. React Native genera binarios nativos para iOS y Android desde una única base de código, lo que permite publicar la app en el App Store y en Google Play. El mismo código React, con adaptaciones, puede también generar la versión web.
+
+Esta distinción es importante: Emergent genera una web que se puede ver en el móvil, pero no una app nativa. Para estar presente en las tiendas de aplicaciones, la versión final debe construirse en React Native con Expo.
+
+| **Parámetro** | Decisión |
+| --- | --- |
+| **Estrategia de plataforma** | Móvil nativo primero (iOS + Android), web después |
+| **Fase 1: Prototipado y desarrollo asistido** | Emergent — generación por lenguaje natural con conexión a Supabase para validar diseño, UX y flujos sobre datos reales |
+| **Fase 2: Desarrollo real** | Claude Code sobre React Native + Expo |
+| **Base de datos** | Supabase (PostgreSQL relacional) |
+| **Autenticación de usuarios** | Supabase Auth |
+| **Analytics** | PostHog (plan gratuito, integrado desde el MVP) |
+| **Soporte de idiomas inicial** | Español e inglés (i18n desde el diseño, ver sección 9) |
+| **Base de datos nutricional** | Open Food Facts / USDA Food Database (TBD) |
+
+2. Usuarios del Sistema
+
+KitchenBase tiene dos tipos de usuarios con roles y permisos muy distintos.
+
+2.1 Usuario Final
+
+Es la persona que usa la app en su día a día para gestionar su cocina. Sus acciones principales son registrar y actualizar su inventario de ingredientes, crear y guardar recetas, consultar el semáforo para saber qué puede cocinar, gestionar su lista de la compra y confirmar cuando ha cocinado un plato para que el sistema descuente automáticamente los ingredientes usados.
+
+Las cuentas de usuario son personales en esta fase. En una fase futura se incorporarán grupos familiares que permitan inventarios y listas de la compra compartidos en tiempo real entre varios miembros del hogar.
+
+2.2 Administrador
+
+Es el responsable de mantener la calidad y consistencia del catálogo global de la aplicación. Sus responsabilidades son revisar los ingredientes creados por usuarios y decidir si aprobarlos, fusionarlos con ingredientes existentes o rechazarlos; conectar cada ingrediente aprobado con la base de datos nutricional externa para poblar automáticamente sus valores nutricionales; y revisar las recetas que los usuarios proponen para el catálogo comunitario, aprobándolas o devolviéndolas con comentarios.
+
+El panel de administración es una interfaz separada cuyo diseño detallado se abordará en la Ola 2.
+
+3. Modelo de Datos (Resumen)
+
+El modelo de datos se describe aquí a nivel conceptual. El Documento 2 (Modelo de Datos) contiene el detalle completo de tablas, campos, tipos y relaciones para Supabase.
+
+3.1 Ingrediente
+
+Es la entidad más granular del sistema. Existen dos tipos según su origen y estado de validación.
+
+**Ingrediente Validado (catálogo global). **Creado o aprobado por el administrador. Contiene nombre, categoría, unidad base (gramos o mililitros según su naturaleza), un catálogo de conversiones a otras unidades (métricas, culinarias y del sistema imperial) y valores nutricionales por 100g o 100ml conectados a la base de datos externa.
+
+Cada ingrediente del catálogo tiene además una marca is_key_default que indica si ese ingrediente es considerado clave por defecto. Un ingrediente es clave cuando su ausencia hace que el plato pierda su identidad o resulte imposible de preparar. Son clave las proteínas principales (pollo, carne, pescado), los carbohidratos estructurales (pasta, arroz, pan), los lácteos determinantes (nata en una salsa de nata) y las verduras protagonistas del plato. No son clave los condimentos, las especias, las hierbas aromáticas decorativas ni los ingredientes de acabado opcional. Este valor se transfiere automáticamente a cada receta que usa el ingrediente, pero el usuario puede sobrescribirlo receta a receta.
+
+**Ingrediente de Usuario (pendiente de validación). **Creado por un usuario al crear una receta cuando el ingrediente no existe en el catálogo global. Entra en un estado de cuarentena: está disponible para las recetas privadas de ese usuario, pero impide que esas recetas se hagan públicas hasta que el administrador lo valide. El administrador puede aprobarlo, fusionarlo con un ingrediente existente o rechazarlo.
+
+**Relación Usuario-Ingrediente (despensa). **Cuando un usuario añade un ingrediente a su despensa, se crea una relación personalizada que incluye la cantidad actual, la unidad de medida, la ubicación física (nevera, despensa o congelador) y una marca personal de ingrediente básico. Los ingredientes marcados como básicos —como la sal o el aceite— se consideran siempre disponibles sin necesidad de controlar su cantidad exacta. Esta marca es personal: cada usuario decide qué considera básico en su cocina.
+
+3.2 Receta
+
+Tiene nombre, lista de ingredientes con cantidades y unidades, pasos de elaboración numerados, tiempo estimado de preparación, número de raciones y nivel de dificultad. Para cada ingrediente de la receta se almacena también si es clave (is_key), inicializado desde el valor por defecto del ingrediente pero editable por el usuario. Incluye una estimación nutricional calculada automáticamente.
+
+Pertenece a un usuario creador y puede encontrarse en tres estados: privada, propuesta al catálogo (pendiente de revisión) y pública (aprobada y visible en el catálogo comunitario). Una receta solo puede proponerse como pública si todos sus ingredientes están validados en el catálogo global.
+
+3.3 Biblioteca Personal
+
+Es la colección de recetas que cada usuario ha guardado para su uso personal. Puede contener tanto recetas propias como recetas del catálogo comunitario. Es sobre esta biblioteca sobre la que opera el semáforo de recetas por defecto.
+
+3.4 Lista de la Compra
+
+Es personal para cada usuario en esta fase. Contiene ingredientes con cantidades pendientes de adquirir. Cuando el usuario tacha un ítem, la app le pregunta la cantidad exacta comprada antes de añadirla al inventario. La lista se puede exportar a canales externos (WhatsApp, correo, etc.) mediante el sistema de compartición estándar del sistema operativo.
+
+4. Arquitectura de Navegación
+
+La app se organiza en torno a seis destinos principales: una pantalla de inicio y cinco secciones accesibles desde una barra de navegación inferior.
+
+4.1 Pantalla de Inicio (Home)
+
+Es la primera pantalla que ve el usuario al abrir la app. Muestra de forma prominente las recetas de su biblioteca que están en verde (listas para cocinar ahora mismo). No muestra alertas negativas para favorecer una experiencia positiva y orientada a la acción.
+
+Incorpora estados vacíos progresivos que guían al usuario nuevo paso a paso. Si no tiene ningún ingrediente registrado, muestra un botón destacado de "Añadir primer ingrediente". Si tiene ingredientes pero no tiene recetas en su biblioteca, muestra el mensaje "Crea tu primera receta o explora el catálogo" con accesos directos a ambas secciones.
+
+4.2 Despensa
+
+Muestra el inventario completo de ingredientes del usuario con sus cantidades y ubicaciones. Ofrece una vista combinada que permite alternar entre agrupación por ubicación física (nevera, despensa, congelador) o por categoría de alimento (lácteos, carnes, verduras, etc.). El usuario puede añadir, editar y eliminar ingredientes desde esta sección.
+
+4.3 Mis Recetas
+
+Es el espacio privado de creación del usuario. Muestra todas sus recetas personales sin un orden fijo predeterminado, con un buscador prominente. Desde aquí el usuario puede crear nuevas recetas mediante un asistente paso a paso y proponer recetas al catálogo comunitario.
+
+4.4 Biblioteca
+
+Es la colección personal de recetas guardadas. Muestra las recetas ordenadas por el semáforo: primero las verdes, luego las amarillas y finalmente las naranjas. Es la sección de uso cotidiano principal de la app.
+
+4.5 Lista de la Compra
+
+Muestra los ingredientes pendientes de comprar. Permite tachar ítems individualmente con confirmación de cantidad, añadir ítems manualmente y exportar la lista completa por los canales estándar del sistema operativo.
+
+4.6 Descubrir
+
+Muestra el catálogo comunitario de recetas públicas aprobadas. El usuario puede navegar por ellas, ver sus valores nutricionales y el semáforo aplicado sobre su propio inventario, y añadir cualquier receta del catálogo a su biblioteca personal.
+
+5. El Semáforo de Recetas
+
+El semáforo es la funcionalidad central de KitchenBase. Clasifica automáticamente las recetas de la biblioteca del usuario cruzando sus ingredientes con el inventario actual. La clasificación tiene tres estados:
+
+|  | **Estado** | **Condición** |
+| --- | --- | --- |
+| 🟢 Verde — Listo | Listo | El usuario tiene todos los ingredientes necesarios en las cantidades requeridas. Puede cocinar el plato ahora mismo. |
+| 🟡 Amarillo — Casi | Casi | Tiene todos los ingredientes clave pero le falta algún condimento, especia o ingrediente secundario de menor importancia. |
+| 🟠 Naranja — Falta | Falta | Le falta al menos un ingrediente marcado como clave para el plato. |
+
+El semáforo tiene en cuenta los ingredientes marcados como básicos, que siempre se consideran disponibles. El cálculo usa el sistema de conversión de unidades para comparar cantidades en unidades distintas. Por defecto opera sobre la biblioteca personal, pero puede aplicarse también sobre el catálogo comunitario en la sección Descubrir.
+
+6. Flujos de Usuario Clave
+
+6.1 Añadir un Ingrediente a la Despensa
+
+El usuario escribe el nombre del ingrediente en un buscador. Si existe en el catálogo global, lo selecciona y especifica la cantidad, la unidad y la ubicación. Si no existe, puede crearlo en el momento; el nuevo ingrediente entrará en estado pendiente de validación y quedará disponible para el uso personal del usuario.
+
+6.2 Crear una Receta
+
+El proceso sigue un asistente paso a paso: nombre del plato, nivel de dificultad y tiempo estimado, número de raciones, ingredientes con cantidades (pudiendo crear nuevos ingredientes si no existen), y pasos de elaboración numerados. Para cada ingrediente, el sistema propone automáticamente si es clave basándose en is_key_default, y el usuario puede ajustarlo. Al completar el proceso, la app calcula la estimación nutricional.
+
+6.3 Añadir Receta a la Lista de la Compra
+
+Desde cualquier receta en estado naranja, el usuario puede pulsar un botón para añadir automáticamente los ingredientes faltantes a su lista de la compra. Solo se añaden los ingredientes que no están disponibles en la cantidad requerida.
+
+6.4 Tachar un Ítem en el Supermercado
+
+Cuando el usuario marca un ítem como comprado, la app le pregunta la cantidad exacta adquirida. Tras confirmar, el ingrediente se suma al inventario de la despensa.
+
+6.5 Confirmar que has Cocinado una Receta
+
+Al terminar de preparar un plato, el usuario lo confirma en la app. El sistema muestra un resumen de los ingredientes que va a descontar con sus cantidades, ajustadas al número de raciones cocinadas. El usuario puede modificar las cantidades antes de confirmar para reflejar variaciones reales.
+
+7. Valores Nutricionales
+
+Cada ingrediente validado del catálogo global tiene asociados sus valores nutricionales por 100g o 100ml, obtenidos de la base de datos nutricional externa durante el proceso de validación por el administrador.
+
+Cuando se crea o modifica una receta, la app calcula automáticamente una estimación nutricional sumando las contribuciones proporcionales de cada ingrediente. El sistema de conversión de unidades es imprescindible para este cálculo. Los valores mínimos almacenados y mostrados son calorías, proteínas, carbohidratos, grasas y fibra, presentados por porción y etiquetados explícitamente como estimación.
+
+8. Sistema de Diseño Visual
+
+Esta sección recoge las decisiones de identidad visual de KitchenBase. Son la referencia obligatoria para los prompts de Emergent en la fase de prototipado y para el sistema de diseño que Claude Code implementará en React Native. Todas las decisiones están registradas en el Documento 4 (D-023 a D-025).
+
+8.1 Tono Visual
+
+KitchenBase adopta un tono limpio y funcional: minimalista, con espacios generosos y foco en la información. La estética es de app de productividad aplicada a la cocina, no de libro de recetas con fotos. Ningún elemento decorativo sin función. Los colores funcionales del semáforo (verde, amarillo, naranja) son los protagonistas visuales de la app; el sistema de diseño no debe competir con ellos.
+
+8.2 Tokens de Diseño
+
+| **Token** | Valor y uso |
+| --- | --- |
+| **Color de marca** | #C2714F (terracota) — botones de acción primaria, iconos activos de navegación, acentos de interfaz, barra de estado superior |
+| **Color de fondo principal** | #FFFFFF (blanco) — fondo de tarjetas y superficies principales |
+| **Color de fondo secundario** | #F5F5F4 (gris muy claro) — fondo de pantalla, separadores de sección |
+| **Color de texto principal** | #1F2937 (casi negro) — títulos, nombres, datos primarios |
+| **Color de texto secundario** | #6B6B6B (gris medio) — metadatos, etiquetas, texto de apoyo |
+| **Semáforo verde** | #22C55E — receta lista para cocinar |
+| **Semáforo amarillo** | #EAB308 — faltan ingredientes secundarios |
+| **Semáforo naranja** | #F97316 — falta al menos un ingrediente clave |
+| **Tipografía — títulos** | Playfair Display (serif) — nombres de recetas, títulos de pantalla |
+| **Tipografía — interfaz** | Inter (sans-serif) — todo el resto: etiquetas, cantidades, metadatos, botones |
+| **Radio de esquinas** | 8px para componentes internos, 12px para tarjetas |
+| **Elevación** | Sin sombras. Separación mediante color de fondo y bordes finos (0.5px) |
+
+8.3 Uso de Colores del Semáforo
+
+Los tres colores del semáforo son colores funcionales, no decorativos. Verde significa que el plato se puede cocinar ahora. Amarillo significa que solo faltan ingredientes secundarios. Naranja significa que falta al menos un ingrediente clave. Estos colores no deben usarse para ningún otro propósito en la interfaz, para evitar confusión semántica.
+
+8.4 Referencia para Prompts de Emergent
+
+Todo prompt para Emergent debe incluir los siguientes parámetros de diseño de forma explícita: estilo minimalista y funcional, color primario terracota #C2714F, fondo blanco con grises muy claros para separar secciones, tipografía Playfair Display para nombres de recetas y títulos, Inter para el resto, y sin sombras ni gradientes. Los colores del semáforo son verde #22C55E, amarillo #EAB308 y naranja #F97316.
+
+9. Internacionalización (i18n)
+
+KitchenBase soportará múltiples idiomas desde el diseño inicial. El soporte de idiomas afecta a dos capas distintas que requieren tratamientos técnicos diferentes.
+
+9.1 Interfaz de Usuario
+
+Todos los textos fijos de la interfaz (botones, menús, mensajes de error, etiquetas) se gestionan mediante la librería i18next, estándar en React y React Native. Los textos se almacenan en archivos de traducción separados por idioma. Esta capa no afecta al modelo de datos.
+
+9.2 Contenido de la Base de Datos
+
+Los nombres de ingredientes, categorías, unidades culinarias y recetas son textos que viven en la base de datos y deben ser traducibles. Para esto se usa una tabla de traducciones centralizada (ver Documento 2) que permite añadir traducciones a cualquier entidad sin modificar el esquema existente.
+
+Las entidades que requieren traducción en el MVP son los nombres de ingredient_categories, los nombres de ingredients, los nombres de units (unidades culinarias) y los títulos y pasos de elaboración de las recetas públicas del catálogo comunitario. Las recetas privadas de los usuarios no requieren traducción: el usuario escribe en su propio idioma y eso no cambia.
+
+9.3 Idiomas del MVP
+
+La versión inicial soporta español e inglés. El español es el idioma de desarrollo y el mercado natural prioritario. El inglés se incluye desde el principio porque la base de datos nutricional externa (Open Food Facts / USDA) trabaja principalmente en inglés, lo que facilita la integración y la validación de ingredientes por el administrador. Añadir idiomas adicionales en fases posteriores solo requiere añadir filas a la tabla de traducciones, sin modificar el esquema.
+
+10. Analytics
+
+KitchenBase integrará PostHog como herramienta de analítica desde el MVP, antes del primer lanzamiento. PostHog es una plataforma de product analytics de código abierto con plan gratuito que permite entender cómo los usuarios interactúan con la app: qué pantallas visitan, dónde abandonan el flujo, qué funcionalidades usan más y cuáles ignoran.
+
+La integración de analytics desde el primer día, no como una mejora posterior, es una práctica recomendada en proyectos de vibe coding porque permite tomar decisiones basadas en comportamiento real de usuarios desde el primer lanzamiento. Para KitchenBase es especialmente valioso dado que los flujos más críticos (añadir ingredientes, crear recetas, usar el semáforo) tienen múltiples pasos donde el usuario puede abandonar.
+
+Los eventos mínimos a registrar en el MVP son la apertura de la app, la adición de un ingrediente a la despensa, la creación de una receta completada, el acceso a la biblioteca y la interacción con el semáforo, el uso de la lista de la compra, y la confirmación de cocinado de una receta. PostHog no recopila datos personales identificables por defecto y es compatible con GDPR.
+
+11. Plan de Desarrollo: Las Tres Olas
+
+El desarrollo de KitchenBase se divide en tres olas con prioridades claras. La Ola 1 constituye el MVP y es la única sobre la que se trabaja en la fase actual del proyecto.
+
+Ola 1 — MVP (fase actual)
+
+| **Despensa** | Gestión completa del inventario personal: búsqueda, añadir ingredientes del catálogo o crear nuevos, vista combinada por ubicación o categoría, y marca de ingrediente básico. |
+| --- | --- |
+| **Semáforo** | Clasificación automática de las recetas de la biblioteca en verde, amarillo y naranja según el inventario actual, usando la lógica is_key para distinguir estados. |
+| **Mis Recetas** | Creación de recetas mediante asistente paso a paso, con asignación automática de is_key por defecto y estimación nutricional calculada al guardar. |
+| **Biblioteca** | Colección personal de recetas guardadas con vista ordenada por semáforo. |
+| **Lista de compra** | Generación desde recetas naranjas, confirmación de cantidad al tachar e integración automática con el inventario. |
+| **Ciclo de consumo** | Confirmación de cocinado con previsualización y ajuste del descuento de ingredientes. |
+| **Estados vacíos** | Mensajes progresivos que guían al usuario nuevo desde cero hasta su primera receta verde. |
+| **Catálogo semilla** | Aproximadamente 50 ingredientes universales de la despensa española típica, poblados durante el desarrollo como datos de prueba y revisados antes del lanzamiento real. Ver D-026. |
+| **Analytics** | Integración de PostHog desde el primer lanzamiento para registrar eventos de uso clave. |
+| **i18n base** | Arquitectura de internacionalización instalada desde el inicio: i18next en frontend y tabla de traducciones en Supabase. Idiomas: español e inglés. |
+| **Sistema de diseño** | Tokens de color (terracota #C2714F), tipografía (Playfair Display + Inter) y reglas de uso del semáforo implementados desde el primer componente. Ver sección 8. |
+| **Criterio de fin de prototipo** | El prototipo en Emergent se considera terminado cuando los 5 flujos críticos son navegables de principio a fin contra datos reales: añadir ingrediente, crear receta, ver semáforo, añadir a lista de compra y confirmar cocinado. Ver D-027. |
+
+Ola 2 — Comunidad
+
+| **Catálogo comunitario** | Sección Descubrir con todas las recetas públicas aprobadas, con semáforo aplicado sobre el inventario del usuario. |
+| --- | --- |
+| **Panel de admin** | Interfaz de administrador para revisar y aprobar ingredientes y recetas propuestos por usuarios, con integración a la base de datos nutricional. |
+| **Compartir lista** | Exportación de la lista de la compra a WhatsApp, correo y otros canales del sistema operativo. |
+
+Ola 3 — Productividad avanzada
+
+| **Escáner de código de barras** | Identificación automática de productos al añadirlos a la despensa. |
+| --- | --- |
+| **Dictado por voz e IA** | Creación de recetas por voz o pegando texto en lenguaje natural, con estructuración automática. |
+| **Grupos familiares** | Inventarios y listas de la compra compartidos en tiempo real entre varios usuarios del mismo hogar. |
+| **Conversión con IA** | Conversión inteligente de unidades no estándar usando modelos de lenguaje. |
+
+12. Publicación en Tiendas de Aplicaciones
+
+La publicación en el App Store (Apple) y Google Play (Google) es un proceso con requisitos específicos que hay que tener en cuenta desde el diseño, aunque la ejecución se planifique cuando haya un producto terminado.
+
+12.1 Aspectos que afectan al diseño actual
+
+Apple es especialmente estricto con las apps que contienen contenido generado por usuarios, que es exactamente el caso de KitchenBase. Exige que existan mecanismos de moderación y reporte de contenido inapropiado. El sistema de validación por administrador que ya está diseñado cubre este requisito para las recetas e ingredientes. Sin embargo, al llegar a la Ola 2 habrá que verificar que el flujo de moderación sea suficientemente explícito para superar la revisión de Apple.
+
+Además, Apple cobra una tarifa anual de 99 dólares para obtener acceso al programa de desarrolladores y publicar apps. Google cobra una tarifa única de 25 dólares. Estos costes deben incluirse en la planificación económica de la D5 cuando se retome.
+
+12.2 Expo y el proceso de publicación
+
+Una de las ventajas de usar React Native con Expo es que simplifica significativamente el proceso de compilación y publicación. Expo proporciona herramientas que automatizan la generación de los binarios necesarios para cada tienda (.ipa para iOS, .aab para Android) sin necesidad de configurar entornos de compilación nativos complejos. Esto es especialmente relevante para un proyecto de vibe coding donde el objetivo es minimizar la complejidad operacional.
+
+13. Decisiones Pendientes
+
+Las siguientes decisiones han sido identificadas pero deliberadamente postpuestas para abordarlas en el momento adecuado del desarrollo.
+
+Panel de administración: diseño detallado de las pantallas y flujos de trabajo del administrador para revisar ingredientes y recetas.
+
+Selección de base de datos nutricional externa: elección definitiva entre Open Food Facts y USDA Food Database, o una combinación de ambas.
+
+Infraestructura y costes (D5): planes de pago de Supabase, dominio propio, y proceso completo de publicación en App Store y Google Play.
+
+Notificaciones push: definición de si habrá notificaciones y para qué eventos (por ejemplo, cuando el administrador valida un ingrediente pendiente del usuario).
+
+Casos límite del semáforo: comportamiento exacto cuando un ingrediente básico se marca manualmente como agotado.
+
+Moderación ampliada: cuando se implemente el catálogo comunitario en la Ola 2, revisar si el sistema de validación por administrador cumple los requisitos de Apple para apps con contenido generado por usuarios.
+
+*Este documento es un borrador de trabajo vivo. Las decisiones aquí recogidas pueden evolucionar durante el desarrollo.*
+
+KitchenBase PRD v1.3  ·  Confidencial  ·  Pág. 1

@@ -1,0 +1,238 @@
+📱
+
+**KitchenBase**
+
+Mapa de Pantallas — Documento 3
+
+Versión 1.1  ·  Mayo 2026
+
+*Alcance: Ola 1 — MVP*
+
+*Nota de revisión v1.1 (mayo 2026): se actualizan las referencias de herramienta de prototipado de Lovable a Emergent. Sin cambios en pantallas, navegación ni flujos respecto a v1.0.*
+
+1. Introducción y Cómo Usar este Documento
+
+Este documento describe todas las pantallas de KitchenBase en su versión MVP (Ola 1). Para cada pantalla se especifica qué contiene visualmente, cómo se llega a ella, qué acciones permite al usuario, y a qué otras pantallas conduce. El objetivo es que tanto Emergent (en la fase de prototipado) como Claude Code (en la fase de desarrollo real) puedan construir la navegación de la app con precisión y sin ambigüedad.
+
+El documento cubre exclusivamente las funcionalidades de la Ola 1. Las pantallas de la Ola 2 (catálogo comunitario, panel de administración) y la Ola 3 se documentarán cuando llegue el momento de implementarlas.
+
+1.1 Estructura de cada ficha de pantalla
+
+Cada pantalla se documenta con cuatro campos. El campo Contenido describe los elementos visuales principales que el usuario ve. El campo Acceso indica desde dónde y cómo se llega a esa pantalla. El campo Acciones lista las cosas que el usuario puede hacer desde ella. El campo Destinos indica a qué otras pantallas puede navegar el usuario desde esa pantalla, ya sea mediante navegación explícita o como resultado de una acción.
+
+1.2 Sistema de identificadores
+
+Cada pantalla tiene un identificador único con el formato GRUPO-NNN. El grupo indica a qué sección de la app pertenece la pantalla: AUTH para autenticación, HOME para la pantalla de inicio, PAN para la sección Despensa, REC para Mis Recetas, LIB para Biblioteca, SHO para Lista de la Compra, DIS para Descubrir, y MOD para pantallas modales y flujos que aparecen sobre otras pantallas. El número es secuencial dentro de cada grupo. Estos identificadores se usan como referencia cruzada entre pantallas y como etiquetas en los prompts de Emergent.
+
+1.3 Diagrama de navegación (resumen)
+
+La navegación principal de la app funciona mediante una barra inferior persistente con cinco pestañas: Despensa, Mis Recetas, Biblioteca, Lista de la Compra y Descubrir. La pantalla de inicio (Home) es la pantalla que aparece al abrir la app y es accesible desde cualquier punto mediante el icono de casa en la barra superior. Los flujos modales (crear ingrediente, crear receta, confirmar cocinado, etc.) aparecen como hojas que se deslizan desde abajo o como pantallas que se apilan sobre la pantalla actual, y siempre tienen un botón de cierre visible para volver al punto de origen.
+
+2. Autenticación
+
+Las pantallas de autenticación son las primeras que ve un usuario que no ha iniciado sesión. Una vez autenticado, el usuario no vuelve a verlas hasta que cierra sesión manualmente. Supabase Auth gestiona toda la lógica de seguridad en segundo plano.
+
+| **AUTH-001  ****Pantalla de Bienvenida (Onboarding)** |
+| --- |
+| **Contenido** | Logotipo de KitchenBase, eslogan breve que resume el valor de la app ('Cocina con lo que tienes'), ilustración o animación simple que representa el concepto, botón principal 'Crear cuenta', botón secundario 'Ya tengo cuenta'. |
+| **Acceso** | Es la primera pantalla que ve un usuario que abre la app sin sesión activa. No es accesible desde dentro de la app una vez autenticado. |
+| **Acciones** | Pulsar 'Crear cuenta' navega a AUTH-002. Pulsar 'Ya tengo cuenta' navega a AUTH-003. |
+| **Destinos** | AUTH-002 (Registro), AUTH-003 (Login). |
+
+| **AUTH-002  ****Registro de Usuario** |
+| --- |
+| **Contenido** | Formulario con campos: nombre de usuario, correo electrónico, contraseña y confirmación de contraseña. Botón 'Crear cuenta'. Enlace 'Ya tengo cuenta' al pie. |
+| **Acceso** | Desde AUTH-001 pulsando 'Crear cuenta'. Desde AUTH-003 pulsando el enlace de registro. |
+| **Acciones** | Rellenar y enviar el formulario crea la cuenta en Supabase Auth y navega a HOME-001. Si hay errores de validación (correo ya en uso, contraseñas no coinciden), se muestran bajo el campo correspondiente sin abandonar la pantalla. |
+| **Destinos** | HOME-001 (Home, tras registro exitoso), AUTH-003 (Login). |
+
+| **AUTH-003  ****Login** |
+| --- |
+| **Contenido** | Formulario con campos: correo electrónico y contraseña. Botón 'Entrar'. Enlace '¿Olvidaste tu contraseña?' y enlace 'Crear cuenta' al pie. |
+| **Acceso** | Desde AUTH-001 pulsando 'Ya tengo cuenta'. Desde AUTH-002 pulsando el enlace de login. Automáticamente si la sesión ha expirado. |
+| **Acciones** | Rellenar y enviar el formulario autentica al usuario y navega a HOME-001. Si las credenciales son incorrectas, se muestra mensaje de error sin abandonar la pantalla. Pulsar '¿Olvidaste tu contraseña?' envía un email de recuperación y muestra confirmación. |
+| **Destinos** | HOME-001 (Home, tras login exitoso), AUTH-002 (Registro). |
+
+3. Pantalla de Inicio (Home)
+
+La pantalla de inicio es el primer destino tras el login y el punto de referencia principal de la app. Su función es responder de forma inmediata a la pregunta '¿qué puedo cocinar hoy?'. Tiene tres estados visuales distintos según el progreso del usuario, documentados a continuación.
+
+| **HOME-001  ****Home — Estado A: Sin ingredientes** |
+| --- |
+| **Contenido** | Mensaje de bienvenida con el nombre del usuario. Ilustración acogedora (cocina vacía o similar). Texto explicativo breve: '¡Empieza añadiendo lo que tienes en tu cocina!'. Botón prominente 'Añadir mi primer ingrediente'. |
+| **Acceso** | Automáticamente tras el primer login. Mientras el usuario no haya registrado ningún ingrediente en su despensa. |
+| **Acciones** | Pulsar 'Añadir mi primer ingrediente' abre el modal MOD-001 (Añadir Ingrediente a Despensa). |
+| **Destinos** | MOD-001 (modal Añadir Ingrediente). |
+
+| **HOME-001  ****Home — Estado B: Con ingredientes, sin recetas en biblioteca** |
+| --- |
+| **Contenido** | Saludo breve ('Buenos días, [nombre]'). Área central con mensaje: 'Tienes [N] ingredientes en tu despensa. ¡Añade recetas para ver qué puedes cocinar!'. Dos botones de acción: 'Crear mi primera receta' y 'Explorar catálogo'. Barra de navegación inferior visible. |
+| **Acceso** | Cuando el usuario tiene al menos un ingrediente pero no tiene ninguna receta guardada en su biblioteca. |
+| **Acciones** | Pulsar 'Crear mi primera receta' navega a REC-002 (Asistente de Creación de Receta). Pulsar 'Explorar catálogo' navega a DIS-001 (Descubrir). |
+| **Destinos** | REC-002 (Crear Receta), DIS-001 (Descubrir). |
+
+| **HOME-001  ****Home — Estado C: Con recetas en biblioteca (estado normal)** |
+| --- |
+| **Contenido** | Saludo breve con el nombre del usuario. Sección principal 'Listo para cocinar' con las recetas verdes de la biblioteca en formato tarjeta horizontal (foto si existe, nombre, tiempo estimado, número de raciones). Si no hay recetas verdes, se muestra un mensaje amable: 'Hoy no tienes todo para ninguna receta. ¿Vamos a la compra?' con acceso rápido a la lista. Contador discreto debajo del saludo: 'X recetas listas · Y casi listas'. Barra de navegación inferior visible. |
+| **Acceso** | Estado normal de la app para un usuario activo con ingredientes y recetas en su biblioteca. |
+| **Acciones** | Pulsar una tarjeta de receta navega a LIB-002 (Detalle de Receta desde Biblioteca). Pulsar el contador de 'casi listas' navega a LIB-001 (Biblioteca) filtrada por amarillas y naranjas. Pulsar 'Vamos a la compra' navega a SHO-001 (Lista de la Compra). |
+| **Destinos** | LIB-002 (Detalle de Receta), LIB-001 (Biblioteca), SHO-001 (Lista de la Compra). |
+
+4. Sección: Despensa
+
+La sección Despensa es el reflejo digital de los ingredientes que el usuario tiene físicamente en su cocina. Es accesible desde la barra de navegación inferior en todo momento. Su función principal es mantener el inventario actualizado, que es la base sobre la que el semáforo opera.
+
+| **PAN-001  ****Despensa — Vista Principal** |
+| --- |
+| **Contenido** | Barra de búsqueda en la parte superior. Selector de vista con dos opciones: 'Por ubicación' y 'Por categoría'. En la vista por ubicación, los ingredientes aparecen agrupados en tres secciones colapsables: Nevera, Despensa y Congelador. En la vista por categoría, aparecen agrupados por tipo (Lácteos, Carnes, Verduras, etc.). Cada ingrediente muestra su nombre, cantidad con unidad, y un icono de ubicación. Los ingredientes marcados como básicos aparecen con una etiqueta visual distintiva y sin cantidad. Botón flotante '+' en la esquina inferior derecha para añadir ingredientes. Estado vacío si no hay ingredientes: mensaje con botón 'Añadir ingrediente'. |
+| **Acceso** | Pestaña 'Despensa' en la barra de navegación inferior. |
+| **Acciones** | Pulsar '+' abre MOD-001 (Añadir Ingrediente). Pulsar sobre un ingrediente abre MOD-002 (Editar Ingrediente). Deslizar un ingrediente hacia la izquierda muestra opción de eliminar con confirmación. Alternar entre vistas por ubicación o categoría es inmediato y no navega a otra pantalla. |
+| **Destinos** | MOD-001 (Añadir Ingrediente), MOD-002 (Editar Ingrediente). |
+
+| **MOD-001  ****Modal: Añadir Ingrediente a Despensa** |
+| --- |
+| **Contenido** | Hoja modal que se desliza desde abajo. Campo de búsqueda con autocompletado en tiempo real contra el catálogo global de ingredientes. Lista de resultados de búsqueda. Si ningún resultado coincide exactamente, aparece la opción 'Crear ingrediente nuevo: [texto escrito]' al final de la lista. Al seleccionar un ingrediente (del catálogo o crearlo nuevo), aparece un formulario secundario con campos: cantidad, selector de unidad (desplegable con las unidades disponibles para ese ingrediente), y selector de ubicación (Nevera / Despensa / Congelador). Toggle de 'Marcar como básico' con texto explicativo breve. Botón 'Guardar' y botón 'Cancelar'. |
+| **Acceso** | Desde PAN-001 pulsando '+'. Desde HOME-001 Estado A pulsando 'Añadir mi primer ingrediente'. Desde MOD-007 (Añadir Ingrediente a Receta) si el usuario elige crear un ingrediente nuevo. |
+| **Acciones** | Buscar en el catálogo actualiza los resultados en tiempo real. Seleccionar un resultado del catálogo rellena automáticamente las unidades disponibles. Pulsar 'Crear ingrediente nuevo' crea un user_ingredient en cuarentena y continúa el flujo. Pulsar 'Guardar' añade el ingrediente a pantry_items y cierra el modal. Pulsar 'Cancelar' cierra el modal sin guardar. |
+| **Destinos** | Cierra al PAN-001 o a la pantalla de origen tras guardar o cancelar. |
+
+| **MOD-002  ****Modal: Editar Ingrediente de Despensa** |
+| --- |
+| **Contenido** | Hoja modal con el nombre del ingrediente como título (no editable, es del catálogo global). Campos editables: cantidad, unidad, ubicación, y toggle de básico. Botón 'Guardar cambios' y botón 'Eliminar ingrediente' (destructivo, con confirmación). |
+| **Acceso** | Desde PAN-001 pulsando sobre un ingrediente de la lista. |
+| **Acciones** | Modificar cualquier campo y pulsar 'Guardar' actualiza el registro en pantry_items. Pulsar 'Eliminar' muestra un diálogo de confirmación; si el usuario confirma, elimina el registro y cierra el modal. |
+| **Destinos** | Cierra a PAN-001 tras guardar o eliminar. |
+
+5. Sección: Mis Recetas
+
+La sección Mis Recetas es el espacio privado de creación del usuario. Aquí viven las recetas que ha creado, independientemente de si las ha añadido a su biblioteca o no. El semáforo no opera en esta sección directamente: para que una receta aparezca con clasificación de color, el usuario debe haberla añadido a su biblioteca.
+
+| **REC-001  ****Mis Recetas — Vista Principal** |
+| --- |
+| **Contenido** | Barra de búsqueda prominente en la parte superior. Lista de recetas del usuario en orden de creación (más recientes primero), cada una mostrando nombre, tiempo estimado, dificultad y una etiqueta de estado ('Privada' o 'Propuesta al catálogo'). Botón flotante '+' para crear nueva receta. Estado vacío si no hay recetas: mensaje con botón 'Crear mi primera receta'. |
+| **Acceso** | Pestaña 'Mis Recetas' en la barra de navegación inferior. |
+| **Acciones** | Buscar filtra la lista en tiempo real por nombre. Pulsar sobre una receta navega a REC-003 (Detalle de Receta Propia). Pulsar '+' navega a REC-002 (Asistente de Creación de Receta). |
+| **Destinos** | REC-002 (Crear Receta), REC-003 (Detalle de Receta Propia). |
+
+| **REC-002  ****Asistente de Creación de Receta** |
+| --- |
+| **Contenido** | Pantalla a pantalla completa (no modal) con indicador de progreso visible en la parte superior mostrando en qué paso está el usuario de un total de cinco. Cada paso ocupa toda la pantalla. Paso 1: campo de texto para el nombre del plato. Paso 2: selector de dificultad (Fácil / Media / Difícil) y campo numérico para el tiempo en minutos. Paso 3: campo numérico para el número de raciones. Paso 4: lista de ingredientes añadidos hasta el momento, campo de búsqueda para añadir más, y para cada ingrediente en la lista: cantidad, selector de unidad, y toggle de 'es ingrediente clave' (inicializado desde is_key_default del ingrediente). Paso 5: lista de pasos de elaboración con campos de texto numerados, botón para añadir un paso nuevo. Botones 'Siguiente' y 'Anterior' en todos los pasos. En el último paso, el botón final es 'Guardar receta'. |
+| **Acceso** | Desde REC-001 pulsando '+'. Desde HOME-001 Estado B pulsando 'Crear mi primera receta'. |
+| **Acciones** | Navegar entre pasos con los botones o con swipe horizontal. En el paso 4, buscar ingredientes funciona igual que en MOD-001: busca en el catálogo y permite crear nuevos. Si se crea un ingrediente nuevo, entra en cuarentena y la receta queda marcada internamente como has_pending_ingredients = TRUE (no bloqueante para uso privado). Pulsar 'Guardar receta' crea la receta en estado privado, calcula la estimación nutricional automáticamente, y navega a REC-003. |
+| **Destinos** | REC-003 (Detalle de Receta Propia, tras guardar). Cancela y vuelve a REC-001 si el usuario cierra sin guardar. |
+
+| **REC-003  ****Detalle de Receta Propia** |
+| --- |
+| **Contenido** | Nombre de la receta como título. Metadatos en fila horizontal: tiempo, dificultad, raciones. Resumen nutricional estimado (calorías, proteínas, carbohidratos, grasas, fibra) por ración, con etiqueta 'Estimación'. Lista de ingredientes con cantidades. Lista de pasos de elaboración numerados. Sección inferior con dos acciones: botón 'Añadir a mi biblioteca' (si no está ya) o 'En mi biblioteca' (si ya está, desactivado o que permite quitar). Botón 'Proponer al catálogo' (solo visible si has_pending_ingredients es FALSE). Menú de opciones (tres puntos) en la esquina superior: Editar receta, Eliminar receta. |
+| **Acceso** | Desde REC-001 pulsando sobre cualquier receta. Desde REC-002 tras guardar. |
+| **Acciones** | Pulsar 'Añadir a mi biblioteca' añade la receta a la tabla library y actualiza el botón. Pulsar 'Proponer al catálogo' cambia el status de la receta a 'proposed' y muestra confirmación. Pulsar 'Editar receta' abre REC-002 en modo edición con los datos precargados. Pulsar 'Eliminar receta' muestra confirmación destructiva; si confirma, elimina y vuelve a REC-001. |
+| **Destinos** | REC-002 (Editar Receta), REC-001 (tras eliminar). |
+
+6. Sección: Biblioteca
+
+La Biblioteca es la colección personal de recetas guardadas y la pantalla de uso cotidiano más importante de la app. Es aquí donde el semáforo opera de forma predeterminada, clasificando las recetas según lo que el usuario tiene disponible en su despensa en ese momento.
+
+| **LIB-001  ****Biblioteca — Vista Principal** |
+| --- |
+| **Contenido** | Lista única de recetas guardadas ordenadas por semáforo: primero las verdes, luego las amarillas, luego las naranjas. Dentro de cada color, el orden es alfabético. Cada tarjeta de receta muestra: indicador de color del semáforo (punto o franja lateral), nombre de la receta, tiempo estimado, dificultad, y el número de ingredientes que faltan si no es verde ('Faltan 2 ingredientes'). Barra de búsqueda en la parte superior para filtrar por nombre. Estado vacío: mensaje con botones 'Añade tu primera receta' (va a REC-002) y 'Explora el catálogo' (va a DIS-001). |
+| **Acceso** | Pestaña 'Biblioteca' en la barra de navegación inferior. |
+| **Acciones** | Pulsar sobre una receta navega a LIB-002. Buscar filtra la lista en tiempo real. Mantener pulsado sobre una tarjeta muestra opción de eliminar de la biblioteca (no elimina la receta, solo la quita de la biblioteca). |
+| **Destinos** | LIB-002 (Detalle de Receta desde Biblioteca), REC-002 (Crear Receta), DIS-001 (Descubrir). |
+
+| **LIB-002  ****Detalle de Receta desde Biblioteca** |
+| --- |
+| **Contenido** | Nombre de la receta como título. Indicador del semáforo actual (verde / amarillo / naranja) con texto explicativo breve ('Puedes cocinar esto ahora' / 'Solo te falta el condimento' / 'Te falta [ingrediente clave]'). Metadatos: tiempo, dificultad, raciones. Resumen nutricional por ración. Lista de ingredientes: los disponibles aparecen en texto normal, los no disponibles aparecen en naranja o amarillo con una etiqueta 'Falta'. Botón 'Añadir ingredientes faltantes a la lista de la compra' (visible solo si hay ingredientes faltantes). Lista de pasos de elaboración. Botón 'He cocinado esto' en la parte inferior, siempre visible. |
+| **Acceso** | Desde LIB-001 pulsando sobre cualquier receta. Desde HOME-001 Estado C pulsando una tarjeta de receta verde. |
+| **Acciones** | Pulsar 'Añadir ingredientes faltantes a la lista de la compra' añade los ingredientes no disponibles a shopping_list_items y muestra confirmación. Pulsar 'He cocinado esto' abre MOD-003 (Confirmar Cocinado). |
+| **Destinos** | MOD-003 (Confirmar Cocinado), SHO-001 (Lista de la Compra, tras añadir ingredientes faltantes). |
+
+| **MOD-003  ****Modal: Confirmar Cocinado** |
+| --- |
+| **Contenido** | Hoja modal con el título 'Has cocinado [nombre de la receta]'. Campo numérico para indicar el número de raciones cocinadas (por defecto, el número de raciones de la receta). Lista de ingredientes que se van a descontar con su cantidad calculada según las raciones indicadas; cada fila es editable para que el usuario ajuste si usó más, menos, o sustituyó un ingrediente. Ingredientes básicos aparecen en la lista pero con una etiqueta 'Básico — no se descuenta'. Botón 'Confirmar y descontar' y botón 'Cancelar'. |
+| **Acceso** | Desde LIB-002 pulsando 'He cocinado esto'. |
+| **Acciones** | Cambiar el número de raciones recalcula todas las cantidades a descontar proporcionalmente. Editar una cantidad individual permite ajuste fino. Pulsar 'Confirmar y descontar' actualiza pantry_items descontando las cantidades confirmadas, crea un registro en cooking_history, y cierra el modal volviendo a LIB-002. Pulsar 'Cancelar' cierra el modal sin hacer cambios. |
+| **Destinos** | Cierra a LIB-002 tras confirmar o cancelar. |
+
+7. Sección: Lista de la Compra
+
+La Lista de la Compra es la sección que el usuario consulta mientras está en el supermercado. Su diseño prioriza la legibilidad y la facilidad de uso con una sola mano, sin necesidad de scroll excesivo para listas medianas.
+
+| **SHO-001  ****Lista de la Compra — Vista Principal** |
+| --- |
+| **Contenido** | Lista de ingredientes pendientes de comprar, cada uno mostrando nombre, cantidad necesaria y unidad. Checkbox a la izquierda de cada ítem para marcarlo como comprado. Los ítems marcados como comprados se desplazan visualmente al final de la lista con estilo tachado. Botón 'Añadir ítem' para añadir ingredientes manualmente. Botón 'Compartir lista' en la barra superior. Botón 'Vaciar lista' (elimina todos los ítems, con confirmación). Estado vacío: mensaje 'Tu lista está vacía. Cuando una receta le falten ingredientes, podrás añadirlos aquí automáticamente.' con acceso directo a LIB-001. |
+| **Acceso** | Pestaña 'Lista de la Compra' en la barra de navegación inferior. |
+| **Acciones** | Pulsar el checkbox de un ítem abre MOD-004 (Confirmar Cantidad Comprada). Pulsar 'Añadir ítem' abre MOD-005 (Añadir Ítem Manualmente). Pulsar 'Compartir lista' abre el sistema nativo de compartición del sistema operativo con la lista formateada como texto. Pulsar 'Vaciar lista' muestra confirmación destructiva y si el usuario confirma, elimina todos los ítems. |
+| **Destinos** | MOD-004 (Confirmar Cantidad Comprada), MOD-005 (Añadir Ítem Manual), LIB-001 (Biblioteca). |
+
+| **MOD-004  ****Modal: Confirmar Cantidad Comprada** |
+| --- |
+| **Contenido** | Hoja modal pequeña (media pantalla). Nombre del ingrediente como título. Campo numérico con la cantidad sugerida (la que estaba en la lista) y selector de unidad. Texto de apoyo: 'Ajusta si compraste una cantidad diferente'. Botón 'Añadir a mi despensa' y botón 'Cancelar'. |
+| **Acceso** | Desde SHO-001 pulsando el checkbox de cualquier ítem. |
+| **Acciones** | Ajustar la cantidad y pulsar 'Añadir a mi despensa' actualiza pantry_items sumando la cantidad comprada, marca el ítem como comprado en shopping_list_items, y cierra el modal. Pulsar 'Cancelar' cierra sin hacer cambios ni marcar el ítem. |
+| **Destinos** | Cierra a SHO-001. |
+
+| **MOD-005  ****Modal: Añadir Ítem Manualmente a la Lista** |
+| --- |
+| **Contenido** | Hoja modal con campo de búsqueda de ingredientes del catálogo global, campo de cantidad y selector de unidad. Botón 'Añadir' y botón 'Cancelar'. |
+| **Acceso** | Desde SHO-001 pulsando 'Añadir ítem'. |
+| **Acciones** | Buscar y seleccionar un ingrediente rellena las unidades disponibles. Pulsar 'Añadir' crea el ítem en shopping_list_items con added_from_recipe_id = NULL y cierra el modal. |
+| **Destinos** | Cierra a SHO-001. |
+
+8. Sección: Descubrir
+
+La sección Descubrir es la ventana al catálogo comunitario de recetas públicas. En el MVP esta sección existe pero su contenido inicial será limitado, ya que el catálogo comunitario se construye en la Ola 2 junto con el panel de administración que aprueba las recetas. Sin embargo, la infraestructura de navegación ya debe estar presente desde el MVP para que el flujo de 'proponer receta al catálogo' tenga un destino visible.
+
+| **DIS-001  ****Descubrir — Catálogo Comunitario** |
+| --- |
+| **Contenido** | Barra de búsqueda. Lista de recetas públicas aprobadas. Cada tarjeta muestra: indicador de semáforo calculado sobre el inventario del usuario actual, nombre de la receta, tiempo estimado, dificultad, y nombre del usuario que la creó. Mensaje informativo si el catálogo tiene pocas recetas: 'El catálogo crece con las contribuciones de la comunidad. ¡Propón una de tus recetas!' |
+| **Acceso** | Pestaña 'Descubrir' en la barra de navegación inferior. |
+| **Acciones** | Buscar filtra la lista en tiempo real. Pulsar sobre una receta navega a DIS-002 (Detalle de Receta del Catálogo). |
+| **Destinos** | DIS-002 (Detalle de Receta del Catálogo). |
+
+| **DIS-002  ****Detalle de Receta del Catálogo** |
+| --- |
+| **Contenido** | Igual que LIB-002 en estructura: nombre, semáforo con explicación, metadatos, resumen nutricional, lista de ingredientes con estado de disponibilidad, pasos de elaboración. Botón 'Guardar en mi biblioteca' en la parte inferior. No tiene botón 'He cocinado esto' en esta pantalla: ese botón solo aparece desde LIB-002, una vez que la receta está en la biblioteca del usuario. |
+| **Acceso** | Desde DIS-001 pulsando cualquier receta del catálogo. |
+| **Acciones** | Pulsar 'Guardar en mi biblioteca' añade la receta a la tabla library del usuario y cambia el botón a 'En mi biblioteca'. Pulsar 'Añadir ingredientes faltantes a la lista de la compra' (si hay ingredientes faltantes) añade los ítems a shopping_list_items. |
+| **Destinos** | SHO-001 (Lista de la Compra, si añade ingredientes faltantes). La pantalla permanece activa tras guardar en biblioteca. |
+
+9. Perfil y Ajustes
+
+Las pantallas de perfil y ajustes son secundarias en el MVP pero necesarias para completar la experiencia. Se acceden desde un icono en la barra superior de la app, visible desde cualquier sección.
+
+| **SET-001  ****Perfil y Ajustes** |
+| --- |
+| **Contenido** | Nombre del usuario y correo electrónico. Sección de ajustes con opciones: selector de idioma (Español / English). Sección de cuenta con opción 'Cerrar sesión'. Información de versión de la app al pie. |
+| **Acceso** | Icono de perfil o menú en la barra superior, accesible desde cualquier pantalla. |
+| **Acciones** | Cambiar idioma actualiza toda la interfaz de forma inmediata mediante i18next. Pulsar 'Cerrar sesión' muestra confirmación; si el usuario confirma, cierra la sesión en Supabase Auth y navega a AUTH-001. |
+| **Destinos** | AUTH-001 (Bienvenida, tras cerrar sesión). |
+
+10. Índice de Pantallas
+
+Referencia rápida de todas las pantallas documentadas en este documento, ordenadas por identificador.
+
+| **ID** | **Nombre** | **Sección** |
+| --- | --- | --- |
+| AUTH-001 | Pantalla de Bienvenida | Autenticación |
+| AUTH-002 | Registro de Usuario | Autenticación |
+| AUTH-003 | Login | Autenticación |
+| HOME-001 | Home (3 estados) | Inicio |
+| PAN-001 | Despensa — Vista Principal | Despensa |
+| MOD-001 | Modal: Añadir Ingrediente | Despensa / Modal |
+| MOD-002 | Modal: Editar Ingrediente | Despensa / Modal |
+| REC-001 | Mis Recetas — Vista Principal | Mis Recetas |
+| REC-002 | Asistente de Creación de Receta | Mis Recetas |
+| REC-003 | Detalle de Receta Propia | Mis Recetas |
+| LIB-001 | Biblioteca — Vista Principal | Biblioteca |
+| LIB-002 | Detalle de Receta desde Biblioteca | Biblioteca |
+| MOD-003 | Modal: Confirmar Cocinado | Biblioteca / Modal |
+| SHO-001 | Lista de la Compra | Lista de la Compra |
+| MOD-004 | Modal: Confirmar Cantidad Comprada | Lista de la Compra / Modal |
+| MOD-005 | Modal: Añadir Ítem Manualmente | Lista de la Compra / Modal |
+| DIS-001 | Descubrir — Catálogo Comunitario | Descubrir |
+| DIS-002 | Detalle de Receta del Catálogo | Descubrir |
+| SET-001 | Perfil y Ajustes | Ajustes |
+
+*Documento vivo. Actualizar cuando se añadan pantallas nuevas o cambie la navegación.*
+
+KitchenBase · Mapa de Pantallas v1.1 · Pág. 1

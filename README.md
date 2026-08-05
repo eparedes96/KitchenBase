@@ -23,10 +23,11 @@ frontend/            App React (todo el producto vive aquí)
     context/         AuthContext (sesión Supabase)
     lib/             supabaseClient, analytics, conversiones, utils
     sql/             schema.sql (snapshot vivo) + migrations/
-docs/                STYLEGUIDE.md (convenciones de código)
+docs/                STYLEGUIDE.md (código) + documentos de diseño (PRD, Modelo de Datos,
+                     Mapa de Pantallas, Registro de Decisiones, Guía de Estilo, deuda técnica)
+                     + plan.md (plan activo) + CHANGELOG.md (historial de fases)
 backend/             Boilerplate de Emergent (FastAPI + MongoDB) — VESTIGIAL, no se usa
 CLAUDE.md            Memoria de proyecto para Claude Code (reglas de oro)
-plan.md              Bitácora de implementación por fases
 ```
 
 ## Arranque (desarrollo)
@@ -52,7 +53,7 @@ Otros scripts: `yarn build` (producción), `yarn test`, `yarn format` / `yarn fo
 ## Documentación
 - **`CLAUDE.md`** — reglas de oro y contexto para trabajar en el proyecto.
 - **`docs/STYLEGUIDE.md`** — convenciones de código.
-- **Documentos de diseño** (fuera del repo, en OneDrive `…/KitchenBase/Documentación/`): PRD, Modelo de Datos, Mapa de Pantallas, Registro de Decisiones, Guía de Estilo y deuda técnica.
+- **`docs/`** — documentos de diseño: PRD, Modelo de Datos, Mapa de Pantallas, Registro de Decisiones (D-001 a D-035), Guía de Estilo y deuda técnica (DT-001 a DT-008). También `plan.md` (plan activo) y `CHANGELOG.md` (historial de fases completadas).
 
 ## Convenciones
 **App en español, código en inglés.** Ver `CLAUDE.md` y `docs/STYLEGUIDE.md`.

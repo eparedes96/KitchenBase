@@ -47,13 +47,11 @@ yarn test                  # tests CRA/Jest
 Requiere variables en `frontend/.env`: `REACT_APP_SUPABASE_URL`, `REACT_APP_SUPABASE_ANON_KEY` (no versionadas).
 
 ## Base de datos (Supabase MCP)
-- El **MCP de Supabase** está conectado en **read-only** (inspeccionar esquema, ejecutar SELECT, listar migraciones). Para aplicar DDL/migraciones hay que abrirlo a escritura o usar el SQL Editor.
-- Triggers presentes: unicidad de cuarentena (D-031), propiedad de cuarentena en despensa. **Pendientes (deuda técnica)**: recálculo de `has_pending_ingredients` al validar admin (DT-001), fusión `merged_into_id` (DT-002), recálculo nutricional por trigger (DT-003) — hoy se hacen desde la app.
+- El **MCP de Supabase** está conectado en **read-only** (inspeccionar esquema, ejecutar SELECT, listar migraciones). Para aplicar DDL/migraciones hay que abrirlo a escritura o usar el SQL Editor (el usuario prefiere que se le pida permiso puntual en vez de asumir por defecto la vía read-only).
+- Triggers presentes: unicidad de cuarentena (D-031), propiedad de cuarentena en despensa. Deuda técnica completa (DT-001 a DT-008) en `docs/kitchenbase_deuda_tecnica_v4.md` — incluye recálculo de `has_pending_ingredients` al validar admin (DT-001), fusión `merged_into_id` (DT-002), recálculo nutricional por trigger (DT-003), i18n runtime no instalado (DT-005), Home como placeholder (DT-006), recuperación de contraseña no implementada (DT-008). El snapshot `schema.sql` tampoco incluye los `alter publication supabase_realtime` de `pantry_items`/`recipes` (nota en OE-004): reconstruir sobre una BD vacía dejaría el realtime sin configurar.
 
 ## Fuentes de verdad / contexto
-- **Documentos de diseño** — viven **fuera del repo**, en OneDrive:
-  `C:\Users\Enrique Paredes\OneDrive\Proyectos\KitchenBase\Documentación\`
-  PRD (Doc 1), Modelo de Datos (Doc 2), Mapa de Pantallas (Doc 3), Registro de Decisiones (Doc 4), **Guía de Estilo (Doc 5)** y `kitchenbase_deuda_tecnica_v4.md`. Son la **intención de diseño**. (Los `.docx` son texto/Markdown, legibles directamente.)
-- **Convenciones**: `docs/STYLEGUIDE.md` (código, en el repo) · Doc 5 Guía de Estilo (visual/UX, en Documentación).
-- **`plan.md`** (raíz): plan activo — objetivos, estado actual, próximos pasos. **`CHANGELOG.md`** (raíz): historial detallado de fases ya completadas.
-- El **repo** es la verdad del código; los documentos, la intención.
+- **Documentos de diseño — ahora en el repo**, en `docs/`: `01_KitchenBase_PRD_v2.docx` (Doc 1), `02_KitchenBase_ModeloDatos_v2.docx` (Doc 2), `03_KitchenBase_MapaPantallas_v2.docx` (Doc 3), `04_KitchenBase_RegistroDecisiones_v2.docx` (Doc 4), `05_KitchenBase_GuiaEstilo_v1.md` (Doc 5) y `kitchenbase_deuda_tecnica_v4.md`. Son la **intención de diseño**. Los `.docx` son texto plano (markdown) con esa extensión, no OOXML — el tool `Read` los rechaza por binarios; leerlos copiándolos a `.md` o con `python -c "print(open(p, encoding='utf-8').read())"`.
+- **Convenciones**: `docs/STYLEGUIDE.md` (código) · Doc 5 Guía de Estilo (visual/UX).
+- **`docs/plan.md`**: plan activo — objetivos, estado actual, próximos pasos. **`docs/CHANGELOG.md`**: historial detallado de fases ya completadas.
+- El **repo** es la verdad del código; los documentos, la intención. Si discrepan, señalarlo y que decida el usuario (ver "Cómo trabajo").

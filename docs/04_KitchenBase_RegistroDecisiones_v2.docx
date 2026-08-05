@@ -1,0 +1,374 @@
+📋
+
+**KitchenBase**
+
+Registro de Decisiones — Documento 4
+
+Versión 1.8 · Mayo 2026
+
+*Documento vivo — añadir una entrada por cada decisión relevante*
+
+*Nota de revisión v1.8 (mayo 2026): se añade la decisión D-035, que documenta la etapa E2 de higiene del repositorio —sincronizar el fichero schema.sql como snapshot fiel del estado vivo de la base de datos tras las migraciones 001-010— y la lección operativa que la acompaña: una tarea no está hecha cuando el código está escrito en el contenedor de Emergent, sino cuando está publicado en el repositorio de GitHub que sobrevive al contenedor. El resto del documento (D-001 a D-034) permanece idéntico a v1.7.*
+
+# **1. Qué es este Documento y Cómo Usarlo**
+
+Este documento registra cronológicamente las decisiones importantes que se tomaron durante el diseño y planificación de KitchenBase, junto con el razonamiento que llevó a cada una. Su propósito no es describir el estado actual del proyecto (eso lo hacen los documentos 1, 2 y 3), sino preservar el contexto que explica por qué las cosas son como son.
+
+La utilidad de este documento es principalmente futura. Cuando retomes el proyecto después de un parón, cuando Claude Code te pregunte por qué algo está diseñado de una manera concreta, o cuando tengas que revisar una decisión porque las circunstancias han cambiado, este documento te ahorrará el tiempo de reconstruir un razonamiento que ya hiciste una vez.
+
+Cada entrada tiene un identificador único (D-NNN), un estado, y cuatro campos: la decisión tomada, las alternativas que se consideraron, el razonamiento que llevó a la elección, y las implicaciones o decisiones futuras que genera. Los estados posibles son DECIDIDO (la decisión está tomada y es firme), POSTPUESTO (la decisión existe pero se ha aplazado deliberadamente), REVISADO (una decisión anterior fue modificada y este registro documenta el cambio), y PENDIENTE (hay que tomar la decisión antes de continuar con algo concreto).
+
+## **Cómo añadir nuevas entradas**
+
+Cada vez que se tome una decisión relevante durante el desarrollo, hay que añadir una entrada a este documento. Una decisión es relevante si afecta a la arquitectura, al modelo de datos, a la navegación, a la experiencia de usuario, o al stack tecnológico. No es necesario registrar decisiones de implementación de detalle (cómo nombrar una variable, qué color exacto usar para un botón) a menos que haya una razón de peso detrás de ellas. La entrada debe añadirse en el momento en que se toma la decisión, no después, porque el razonamiento se olvida rápido.
+
+# **2. Decisiones Técnicas y de Stack**
+
+**D-001 — Plataforma: móvil primero, web después**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | KitchenBase es una app móvil nativa como destino principal. La versión web es un objetivo secundario a desarrollar posteriormente sobre la misma base de código. |
+| **Alternativas** | Solo web (descartado: la app se usa en contextos físicos como la nevera y el supermercado donde el móvil es el dispositivo natural). Solo móvil (descartado: limita el alcance a largo plazo). Web primero (descartado: el móvil es el contexto de uso principal y empezar por web puede llevar a decisiones de diseño subóptimas para pantallas pequeñas). |
+| **Razonamiento** | Los momentos de uso principales de KitchenBase ocurren delante de la nevera (consultar despensa), en el supermercado (lista de la compra), y en la cocina (consultar receta y confirmar cocinado). Todos esos contextos son móviles. Diseñar primero para móvil garantiza que la experiencia principal esté optimizada para el caso de uso real. |
+| **Implicaciones** | Todo el diseño de pantallas debe pensarse para pantallas de entre 375px y 430px de ancho. Los flujos deben ser usables con una sola mano. La decisión de stack (D-003) debe ser compatible con esta prioridad. |
+
+**D-002 — Estrategia de desarrollo: prototipo en Lovable + app real en React Native + Expo**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | El desarrollo se divide en dos fases. Fase 1: prototipo visual en Lovable para validar diseño y flujos. Fase 2: app real construida con Claude Code sobre React Native con Expo, que es el stack definitivo para publicar en App Store y Google Play. |
+| **Alternativas** | Solo Lovable como destino final (descartado: Lovable genera webs, no apps nativas publicables en tiendas). Solo React Native desde el principio (descartado: ralentiza la validación del diseño que es más rápida en Lovable). Nativo puro (Swift + Kotlin) (descartado: requiere dos bases de código separadas y conocimiento técnico muy específico). |
+| **Razonamiento** | Lovable permite iterar sobre el diseño y la experiencia de usuario muy rápidamente sin escribir código. React Native + Expo permite publicar una sola base de código tanto en iOS como en Android, y potencialmente en web. La combinación aprovecha las ventajas de cada herramienta en la fase en que más aportan: velocidad de iteración primero, calidad de producción después. |
+| **Implicaciones** | El código generado por Lovable no es reutilizable directamente en React Native, pero sirve como referencia visual y de lógica. El mapa de pantallas (Documento 3) es el puente entre ambas fases: lo que Lovable construye visualmente, Claude Code lo implementa nativamente siguiendo esas especificaciones. |
+
+**D-003 — Base de datos y autenticación: Supabase**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | Supabase es el backend de KitchenBase: gestiona la base de datos PostgreSQL relacional, la autenticación de usuarios (Supabase Auth), y el almacenamiento de archivos si fuera necesario. |
+| **Alternativas** | Firebase (descartado: su modelo de datos NoSQL no es adecuado para las consultas cruzadas complejas que requiere el semáforo). Backend propio con Node.js y PostgreSQL (descartado: añade complejidad de infraestructura innecesaria para esta fase). Convex DB (considerado pero descartado: menos maduro y sin integración nativa con Lovable). |
+| **Razonamiento** | La lógica central de KitchenBase, cruzar ingredientes de la despensa con ingredientes de recetas, es exactamente el tipo de problema para el que las bases de datos relacionales existen. Supabase ofrece PostgreSQL relacional, autenticación integrada, Row Level Security para proteger datos de usuario, y una integración nativa con Lovable que simplifica la fase de prototipado. |
+| **Implicaciones** | El modelo de datos debe diseñarse pensando en PostgreSQL desde el principio. Las consultas del semáforo se implementarán como funciones de base de datos (PostgreSQL functions) para optimizar el rendimiento. Row Level Security es obligatorio para garantizar que los datos de un usuario no sean accesibles por otro. |
+
+# **3. Decisiones de Producto y Modelo de Datos**
+
+**D-004 — Ingredientes básicos: categoría especial sin cantidad**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | Los ingredientes que el usuario siempre tiene en casa (sal, aceite, azúcar, etc.) se marcan con un flag personal is_basic. El sistema los considera siempre disponibles sin comprobar su cantidad. La marca es personal: cada usuario decide qué considera básico. |
+| **Alternativas** | Tratarlos igual que el resto con cantidad muy alta (descartado: requiere que el usuario actualice el stock de sal cada vez que cocina, lo cual es irreal). Categoría global de básicos definida por el administrador (descartado: lo que es básico varía por persona y cultura culinaria). Ignorar el concepto y hacer que el usuario controle todo (descartado: genera fricción innecesaria en el uso cotidiano). |
+| **Razonamiento** | El objetivo de la app es reducir la fricción, no aumentarla. Obligar al usuario a registrar que tiene sal o aceite cada vez que los usa contradiría ese objetivo. Al mismo tiempo, definir básicos globalmente ignora que para un usuario vegano el queso no es básico aunque para otro sí lo sea. La marca personal resuelve ambos problemas. |
+| **Implicaciones** | El campo is_basic vive en pantry_items (la relación usuario-ingrediente), no en la tabla ingredients del catálogo global. El algoritmo del semáforo debe comprobar is_basic antes de comprobar la cantidad disponible. |
+
+**D-005 — Eliminación de fechas de caducidad del MVP**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | Las fechas de caducidad de los ingredientes no forman parte del MVP. Se pueden considerar en fases futuras. |
+| **Alternativas** | Incluir fechas de caducidad con alertas automáticas (descartado para el MVP). Incluirlas como campo opcional sin alertas (descartado: añade campos al formulario sin valor inmediato). |
+| **Razonamiento** | Registrar fechas de caducidad manualmente es un trabajo significativo que el usuario debe repetir cada vez que compra. El beneficio (alertas de caducidad) no justifica ese esfuerzo en la primera versión de la app. La mayoría de los usuarios saben intuitivamente cuándo caduca la leche sin necesitar una notificación. Quitar esta funcionalidad simplifica el formulario de añadir ingrediente y reduce la fricción de uso. |
+| **Implicaciones** | La tabla pantry_items no tiene campo expiry_date en la versión actual. Si se añade en el futuro, será una migración de base de datos sencilla. El diseño de la pantalla de despensa no necesita contemplar indicadores de caducidad próxima. |
+
+**D-006 — Sistema de unidades: catálogo centralizado con conversiones por ingrediente**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | Las unidades de medida se gestionan en una tabla units centralizada (catálogo de unidades reconocidas por el sistema). Las conversiones específicas de cada ingrediente se guardan en unit_conversions, que referencia units mediante unit_id en lugar de usar texto libre. |
+| **Alternativas** | Texto libre para las unidades (descartado: genera inconsistencias). Unidades fijas hardcodeadas en el código (descartado: no permite añadir nuevas unidades sin modificar el código). Un único factor de conversión global por unidad (descartado: el peso de una cucharada varía por ingrediente; una cucharada de harina pesa distinto que una de miel). |
+| **Razonamiento** | El sistema de conversión es imprescindible tanto para el semáforo como para el cálculo nutricional. Centralizar las unidades evita duplicados y permite traducirlas a otros idiomas mediante la tabla translations. El factor de conversión por ingrediente es necesario por razones físicas: la densidad varía. |
+| **Implicaciones** | El administrador es responsable de mantener el catálogo de units. Cada vez que se añade un ingrediente nuevo, el administrador debe definir también sus factores de conversión para todas las unidades culinarias relevantes. Esto es trabajo adicional pero garantiza la precisión del sistema. |
+
+**D-007 — Ingrediente clave (is_key): valor por defecto en catálogo, editable por usuario**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | Cada ingrediente del catálogo global tiene un campo is_key_default que indica si se considera clave por defecto. Cuando un usuario añade ese ingrediente a una receta, el campo is_key de recipe_ingredients se inicializa desde is_key_default, pero el usuario puede modificarlo receta a receta. |
+| **Alternativas** | is_key definido solo por el usuario en cada receta sin valor por defecto (descartado: requiere que el usuario tome esa decisión en cada receta, generando fricción). is_key global e inmutable definido solo por el administrador (descartado: no permite que el usuario adapte la clasificación a su criterio personal). No distinguir entre ingredientes clave y secundarios (descartado: el semáforo perdería la distinción entre amarillo y naranja). |
+| **Razonamiento** | El valor por defecto inteligente reduce la fricción: para la mayoría de recetas, el administrador habrá marcado correctamente qué es clave (el pollo en un pollo al ajillo) y qué no (el perejil decorativo). El usuario solo necesita intervenir cuando su criterio difiere del estándar, que será una minoría de los casos. |
+| **Implicaciones** | La definición de ingrediente clave debe ser clara y consistente para el administrador. Un ingrediente es clave cuando su ausencia hace que el plato pierda su identidad o sea imposible de preparar: proteínas principales, carbohidratos estructurales, lácteos determinantes, y verduras protagonistas. No son clave los condimentos, especias, hierbas decorativas ni ingredientes de acabado. |
+
+**D-008 — Tres capas de recetas: Mis Recetas, Biblioteca y Catálogo**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | El sistema de recetas tiene tres capas diferenciadas: Mis Recetas (recetas creadas por el usuario, siempre privadas o propuestas), Biblioteca (colección personal de recetas guardadas, mezcla de propias y del catálogo), y Catálogo Comunitario (recetas públicas aprobadas por el administrador). El semáforo opera sobre la Biblioteca por defecto. |
+| **Alternativas** | Todo en un único recetario personal (descartado: no permite distinguir entre recetas creadas y recetas descubiertas). Catálogo público sin recetas privadas (descartado: elimina la privacidad y la posibilidad de guardar recetas en progreso). Favoritos en lugar de biblioteca (descartado: el concepto de biblioteca es más rico). |
+| **Razonamiento** | La distinción entre Mis Recetas y Biblioteca resuelve un problema real: el usuario puede querer guardar una receta del catálogo para cocinarla regularmente sin haberla creado él. El semáforo sobre la Biblioteca es la elección correcta porque la Biblioteca representa exactamente el conjunto de recetas que el usuario quiere tener disponibles para su uso cotidiano. |
+| **Implicaciones** | La tabla library actúa como tabla de unión entre usuarios y recetas. Una receta puede estar en la biblioteca de muchos usuarios. Eliminar una receta de la biblioteca no elimina la receta en sí. El semáforo debe recalcularse cada vez que cambia el inventario de la despensa. |
+
+**D-009 — Ingredientes de usuario: zona de cuarentena con impacto en publicabilidad**
+
+| **↻ REVISADO** | **Original:**** **Abril 2026 · **Revisión:**** **Mayo 2026 |
+| --- | --- |
+| **Nota de revisión** | Versión original (abril 2026): los ingredientes en cuarentena podían usarse en recetas privadas pero NO se podían añadir a la despensa hasta que el admin los validara. En uso real esto rompió el bucle conceptual del producto: un usuario con un ingrediente que aún no está en el catálogo no podía registrarlo en su despensa, lo que dejaba la despensa incompleta y degradaba el semáforo. La revisión amplía el alcance permitiendo también añadirlos a la despensa, con tratamiento especial en el semáforo. Ver D-029 para el detalle del cambio. |
+| **Decisión vigente** | Cuando un usuario crea un ingrediente que no existe en el catálogo global, ese ingrediente entra en un estado de cuarentena (tabla user_ingredients). Está disponible para las recetas privadas del usuario y, desde la revisión de mayo 2026, también para la despensa del usuario. Sigue impidiendo que las recetas que lo usan se hagan públicas hasta que el administrador lo valide. La validación puede resultar en aprobación, fusión con un ingrediente existente, o rechazo. |
+| **Alternativas** | Mantener la restricción original (descartado: rompe el bucle de uso, ver razonamiento). Permitir cuarentena solo si el ingrediente es básico, sin cantidad (descartado: arbitrario y poco intuitivo). |
+| **Razonamiento** | La regla original protegía la calidad del catálogo y la lógica del semáforo. La ampliación protege también la utilidad del producto durante el periodo previo a tener un admin operativo (que en MVP es trabajo manual del product owner). El sistema de validación sigue siendo la única vía para que el catálogo global incorpore ingredientes nuevos. La despensa con un ingrediente en cuarentena simplemente refleja la realidad del usuario, sin contaminar el catálogo global. |
+| **Implicaciones** | La tabla pantry_items se modifica para aceptar un XOR entre ingredient_id (catálogo global) y user_ingredient_id (cuarentena), igual que ya hace recipe_ingredients. La lógica del semáforo (Documento 2, sección 7) trata estos ingredientes como disponibles, pero cualquier receta cuyo cálculo de disponibilidad dependa de ellos hereda has_pending_ingredients = TRUE como señal de que parte del cómputo se apoya en datos no validados. Cuando el admin fusiona un user_ingredient con un ingredient del catálogo, las filas de pantry_items que lo referenciaban se actualizan automáticamente (trigger nuevo, equivalente al ya descrito para recipe_ingredients). |
+
+**D-010 — Confirmación de cantidad al comprar: pregunta antes de actualizar inventario**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | Cuando el usuario tacha un ítem de la lista de la compra, la app le pregunta la cantidad exacta que compró antes de añadirla al inventario. El usuario puede ajustar si compró más o menos de lo previsto. |
+| **Alternativas** | Añadir directamente la cantidad prevista al inventario sin preguntar (descartado: en el supermercado es habitual comprar cantidades distintas a las planificadas). Preguntar la cantidad y la unidad cada vez (descartado: añade fricción innecesaria cuando la unidad ya está definida en la lista). |
+| **Razonamiento** | La precisión del inventario depende directamente de este momento. Si el sistema asume que el usuario compró exactamente lo previsto sin preguntarle, el inventario se desviará de la realidad rápidamente. La pregunta añade un paso pero garantiza que el inventario refleje lo que realmente hay en la cocina, que es la base sobre la que opera el semáforo. |
+| **Implicaciones** | El modal MOD-004 debe ser rápido y fácil de usar con una sola mano (contexto supermercado). El campo bought_quantity en shopping_list_items puede diferir de needed_quantity, y ambos se conservan para posibles análisis futuros. |
+
+**D-011 — Ciclo de consumo: previsualización editable antes de descontar inventario**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | Al confirmar que ha cocinado una receta, el sistema muestra al usuario un resumen de lo que va a descontar del inventario (ingredientes y cantidades, escalados al número de raciones cocinadas) y permite editar antes de aplicar. |
+| **Alternativas** | Descuento automático sin confirmación (descartado: el usuario puede haber usado cantidades distintas a las de la receta, o haber sustituido un ingrediente). Descuento ingrediente por ingrediente con confirmación individual (descartado: demasiado tedioso si la receta tiene muchos ingredientes). |
+| **Razonamiento** | Las recetas son guías, no instrucciones exactas. En la práctica real de cocinar, las cantidades varían. Dar al usuario la posibilidad de ajustar antes del descuento mantiene el inventario preciso sin añadir una fricción excesiva, porque el ajuste se hace en un solo paso con una vista de conjunto. |
+| **Implicaciones** | El modal MOD-003 debe calcular las cantidades en tiempo real cuando el usuario cambia el número de raciones. Los ingredientes básicos aparecen en la lista pero no se descuentan (is_basic = TRUE). |
+
+# **4. Decisiones de Navegación y UX**
+
+**D-012 — Pantalla de inicio: solo recetas verdes, sin alertas negativas**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | La pantalla de inicio muestra únicamente las recetas que el usuario puede cocinar ahora mismo (verdes). No muestra alertas de ingredientes faltantes ni otro contenido negativo. Si no hay recetas verdes, muestra un mensaje neutro y constructivo con un acceso rápido a la lista de la compra. |
+| **Alternativas** | Mostrar el semáforo completo en la pantalla de inicio (descartado: abruma al usuario). Mostrar alertas de despensa (caducidades, stocks bajos) como elemento principal (descartado: la decisión D-005 eliminó caducidades). Mostrar un resumen general del estado de la cocina (descartado: demasiado complejo para una pantalla de inicio). |
+| **Razonamiento** | La pantalla de inicio es el primer punto de contacto del usuario cada vez que abre la app. Mostrar contenido positivo y accionable (‘puedes cocinar esto ahora’) crea una experiencia motivadora que fomenta el uso. La Biblioteca ya ofrece la vista completa del semáforo para quien quiera ver el estado global. |
+| **Implicaciones** | La pantalla de inicio requiere consultar en tiempo real el semáforo de las recetas de la biblioteca del usuario. Esta consulta debe ser eficiente porque se ejecuta cada vez que el usuario abre la app. |
+
+**D-013 — Estados vacíos progresivos en la pantalla de inicio**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | La pantalla de inicio tiene tres estados visuales distintos según el progreso del usuario: sin ingredientes (muestra botón de añadir primer ingrediente), con ingredientes pero sin recetas en biblioteca (muestra botones para crear receta o explorar catálogo), y estado normal con recetas disponibles. |
+| **Alternativas** | Un único estado vacío genérico (descartado: no diferencia entre usuario nuevo y usuario activo sin recetas verdes hoy). Tutorial interactivo de onboarding (descartado: añade complejidad y los usuarios suelen saltárselos). Despensa pre-rellenada con datos de ejemplo (descartado: contamina los datos reales del usuario). |
+| **Razonamiento** | Los estados vacíos progresivos responden a la pregunta ‘qué hago ahora’ de forma contextual. El usuario nuevo necesita orientación sobre los primeros pasos. El usuario con ingredientes pero sin recetas necesita ser dirigido hacia la creación o el descubrimiento. El usuario activo sin recetas verdes hoy necesita un camino claro hacia la lista de la compra. |
+| **Implicaciones** | La lógica de la pantalla de inicio debe evaluar dos condiciones: si pantry_items está vacío para el usuario, y si library está vacío para el usuario. El orden de evaluación importa: primero se comprueba si hay ingredientes, luego si hay recetas en biblioteca. |
+
+**D-014 — Estructura de navegación: 5 pestañas + pantalla de inicio**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | La app tiene una barra de navegación inferior con cinco pestañas: Despensa, Mis Recetas, Biblioteca, Lista de la Compra y Descubrir. La pantalla de inicio es el destino al abrir la app y es accesible desde un icono en la barra superior. |
+| **Alternativas** | 3 pestañas agrupando más contenido (descartado: mezclaría Mis Recetas y Biblioteca que tienen propósitos distintos). 4 pestañas sin Descubrir (descartado: elimina la sección comunitaria del MVP). Menú lateral hamburguer (descartado: menos accesible en pantallas grandes y menos intuitivo en mobile-first). |
+| **Razonamiento** | Cada sección tiene una función suficientemente distinta para merecer su propia pestaña. La barra inferior es el patrón de navegación estándar en iOS y Android para apps con 3-5 secciones principales. Cinco pestañas está en el límite superior recomendado, pero está justificado porque no hay una forma natural de fusionar ninguna de ellas sin perder claridad. |
+| **Implicaciones** | Los iconos de la barra inferior deben ser autoexplicativos porque estarán siempre visibles. Los nombres de las pestañas deben ser cortos (una o dos palabras) para caber en pantallas estrechas. |
+
+**D-015 —**** ****‘****He cocinado esto****’**** ****solo disponible desde Biblioteca, no desde Descubrir**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | El botón ‘He cocinado esto’ que activa el ciclo de consumo solo aparece en la vista de detalle de una receta cuando se accede desde la Biblioteca. No aparece cuando el usuario está explorando una receta en el catálogo de Descubrir. |
+| **Alternativas** | Mostrar el botón en todas las vistas de detalle de receta (descartado: permite descontar ingredientes de recetas que el usuario no ha hecho suyas). No mostrar el botón en ninguna pantalla de detalle y acceder al ciclo de consumo desde otra ruta (descartado: añade pasos innecesarios). |
+| **Razonamiento** | El ciclo de consumo tiene sentido cuando el usuario ha decidido que esa receta forma parte de su repertorio habitual, lo que se expresa añadiéndola a su biblioteca. Explorar una receta del catálogo por primera vez no implica ese compromiso. El flujo correcto es: descubro una receta en el catálogo → la guardo en mi biblioteca → la cocino → confirmo desde la biblioteca. |
+| **Implicaciones** | DIS-002 (Detalle desde Catálogo) tiene el botón ‘Guardar en mi biblioteca’ pero no ‘He cocinado esto’. LIB-002 (Detalle desde Biblioteca) tiene ambos. Esto crea un flujo de dos pasos para la primera vez que se cocina una receta descubierta en el catálogo. |
+
+# **5. Internacionalización y Analytics**
+
+**D-016 — i18n: dos capas distintas con tratamientos distintos**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | El soporte multiidioma se implementa en dos capas. La capa de interfaz usa i18next (archivos de traducción por idioma, no afecta a la base de datos). La capa de contenido usa una tabla translations en Supabase que almacena traducciones de campos de texto de cualquier entidad sin modificar el esquema de las tablas existentes. |
+| **Alternativas** | Columnas de traducción en cada tabla (descartado: escala mal con cada idioma nuevo). Tabla de traducción separada por entidad (descartado: multiplica el número de tablas). Solo traducir la interfaz, no el contenido (descartado: los nombres de ingredientes y categorías deben ser traducibles). |
+| **Razonamiento** | Las dos capas tienen necesidades diferentes. La interfaz tiene textos fijos que se traducen una vez. El contenido tiene textos dinámicos que pertenecen a entidades de la base de datos. Una tabla de traducciones universal es el patrón estándar para esto porque permite añadir nuevos idiomas sin modificar el esquema y sin duplicar tablas. |
+| **Implicaciones** | Al consultar el nombre de un ingrediente, la app busca primero en translations con el idioma del usuario y cae al nombre base en español si no existe traducción. El administrador es responsable de añadir traducciones al catálogo. Las recetas privadas de los usuarios no son traducibles. |
+
+**D-017 — Idiomas del MVP: español e inglés**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | La versión inicial soporta dos idiomas: español como idioma base de desarrollo y mercado prioritario, e inglés como segundo idioma. |
+| **Alternativas** | Solo español (descartado: limita el alcance desde el principio sin beneficio técnico). Más de dos idiomas desde el inicio (descartado: añade trabajo de traducción y mantenimiento sin validar primero si hay demanda). |
+| **Razonamiento** | El español es el idioma natural del proyecto y del equipo de desarrollo. El inglés se incluye desde el inicio por razones prácticas: la base de datos nutricional externa trabaja en inglés, los ingredientes del catálogo inicial probablemente tendrán nombres en inglés que hay que traducir al español, y el inglés amplía el alcance potencial sin un coste de traducción muy elevado. |
+| **Implicaciones** | La tabla translations tendrá desde el inicio entradas con language = ‘es’ y language = ‘en’. Añadir francés, alemán u otros idiomas en fases posteriores solo requiere añadir filas a esa tabla. |
+
+**D-018 — Analytics: PostHog integrado desde el MVP**
+
+| **✓ DECIDIDO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | PostHog se integra en la app desde el primer lanzamiento, antes de tener usuarios reales, registrando eventos clave de uso sin datos personales identificables. |
+| **Alternativas** | Sin analytics en el MVP (descartado: impide tomar decisiones basadas en comportamiento real). Google Analytics / Firebase Analytics (descartados: PostHog es open source, compatible con GDPR, más orientado a product analytics). Implementar analytics después del lanzamiento (descartado: se pierden los datos de los primeros usuarios). |
+| **Razonamiento** | Las decisiones de la Ola 2 dependen de entender cómo los usuarios reales usan la Ola 1. Sin datos de comportamiento, esas decisiones serían especulativas. PostHog permite entender qué flujos se abandonan, qué funcionalidades no se usan, y qué partes de la app generan más engagement. |
+| **Implicaciones** | PostHog debe inicializarse antes del primer render de la app. Los eventos mínimos a registrar en el MVP son: apertura de app, añadir ingrediente, crear receta, consultar semáforo, usar lista de la compra, y confirmar cocinado. No se debe enviar ningún dato que permita identificar al usuario. |
+
+# **6. Decisiones Postpuestas**
+
+Las siguientes decisiones han sido identificadas como necesarias pero deliberadamente aplazadas. Están documentadas aquí para que no se olvide que existen y para que el contexto de por qué se postpusieron esté disponible cuando llegue el momento de tomarlas.
+
+**D-019 — Infraestructura y costes (D5)**
+
+| **⏸ POSTPUESTO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | Postpuesta. No se ha elegido plan de pago de Supabase ni de Lovable, ni se han definido costes de dominio propio o cuentas de desarrollador de App Store y Google Play. |
+| **Por qué se pospone** | No tiene sentido planificar infraestructura de producción antes de tener un producto funcional. Los planes gratuitos de Supabase y Lovable son suficientes para la fase de desarrollo y prototipado. |
+| **Cuándo decidir** | Antes del primer lanzamiento con usuarios reales. Como referencia: Apple cobra 99 USD/año por la cuenta de desarrollador. Google cobra 25 USD de tarifa única. Supabase Pro cuesta 25 USD/mes. |
+| **Referencia** | Ver sección 11 del PRD (Documento 1) para más contexto sobre el proceso de publicación en tiendas. |
+
+**D-020 — Panel de administración: diseño de pantallas**
+
+| **⏸ POSTPUESTO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | Postpuesta. El panel de administración (para revisar ingredientes y recetas propuestos por usuarios) no se ha diseñado a nivel de pantallas ni de flujos de trabajo. |
+| **Por qué se pospone** | El panel de administración es una mini-app separada con lógica propia. Diseñarla antes de tener el catálogo global mínimamente poblado y antes de que haya usuarios reales proponiendo ingredientes y recetas sería diseñar en el vacío. |
+| **Cuándo decidir** | Al inicio de la Ola 2, antes de implementar el catálogo comunitario. El panel debe existir antes de que se pueda aprobar la primera receta pública. |
+| **Referencia** | Apple revisa las apps con contenido generado por usuarios con especial atención a los mecanismos de moderación. El panel de administración debe ser suficientemente explícito y robusto para superar esa revisión. |
+
+**D-021 — Notificaciones push**
+
+| **⏸ POSTPUESTO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | Postpuesta. No se ha decidido si habrá notificaciones push, para qué eventos, ni qué proveedor se usará. |
+| **Por qué se pospone** | Las notificaciones push requieren permiso explícito del usuario en iOS y Android. Pedirlo demasiado pronto, antes de que el usuario haya visto el valor de la app, reduce la tasa de aceptación. |
+| **Cuándo decidir** | Durante la Ola 2, después de tener datos de comportamiento de usuarios que indiquen si las notificaciones añadirían valor o molestarían. |
+| **Referencia** | Casos de uso candidatos: notificación cuando el administrador valida un ingrediente pendiente del usuario; notificación cuando una receta de la biblioteca pasa de naranja a verde. |
+
+**D-022 — Base de datos nutricional externa: Open Food Facts vs. USDA**
+
+| **⏸ POSTPUESTO** | **Fecha:**** **Abril 2026 |
+| --- | --- |
+| **Decisión** | Postpuesta. No se ha elegido definitivamente entre Open Food Facts y USDA Food Database como fuente de datos nutricionales. |
+| **Por qué se pospone** | Esta decisión requiere evaluar técnicamente la API de cada servicio, su cobertura de alimentos relevantes para el mercado hispanohablante, y sus condiciones de uso. Esa evaluación tiene más sentido hacerla cuando se implemente el panel de administración. |
+| **Cuándo decidir** | Al inicio de la implementación del panel de administración en la Ola 2. |
+| **Referencia** | Open Food Facts es open source y colaborativa, con buena cobertura de productos europeos. USDA es la referencia científica americana con datos muy precisos pero menor cobertura de productos no americanos. El campo external_db_id en la tabla ingredients está diseñado para soportar cualquiera de las dos opciones. |
+
+# **7. Decisiones de Sistema de Diseño**
+
+Las siguientes decisiones fijan el sistema visual de KitchenBase y los criterios de poblado del catálogo y del prototipo. Se tomaron en mayo de 2026, antes de iniciar el desarrollo en Emergent.
+
+**D-023 — Tono visual: limpio y funcional (productivity app)**
+
+| **✓ DECIDIDO** | **Fecha:**** **Mayo 2026 |
+| --- | --- |
+| **Decisión** | El tono visual de KitchenBase es el de una app de productividad limpia y funcional, no el de un recetario decorativo. Tipografía clara, espacio generoso, sin elementos visuales superfluos. Sin gradientes, sin sombras, sin texturas. La calidez viene del color de marca y de la tipografía elegida, no de la decoración. |
+| **Alternativas** | Recetario decorativo con muchas imágenes y elementos visuales (descartado: la app no es un libro de recetas, es una herramienta de gestión de cocina). Estilo neumórfico o glassmorphism (descartado: añade complejidad visual sin mejorar la usabilidad). Estilo minimalista frío y monocromo (descartado: KitchenBase trata sobre comida y debe transmitir calidez sin caer en lo decorativo). |
+| **Razonamiento** | La app se usa en contextos cotidianos cortos: una mirada rápida a la despensa, una consulta de receta mientras cocinas, un tachado en el supermercado. En esos momentos, el usuario necesita información clara y acción rápida, no contemplación visual. Un tono de productividad respeta el contexto de uso real. |
+| **Implicaciones** | No se usan sombras (box-shadow) en componentes. No se usan gradientes. Las imágenes (cuando existan, en fases posteriores) deben ser funcionales, no decorativas. El sistema de diseño debe priorizar legibilidad sobre estética. |
+
+**D-024 — Color de marca: terracota #C2714F**
+
+| **✓ DECIDIDO** | **Fecha:**** **Mayo 2026 |
+| --- | --- |
+| **Decisión** | El color principal de KitchenBase es terracota (#C2714F). Se usa para acciones primarias, estados activos, indicadores de selección, y el icono de la app. Como variante clara existe #FDF3EF (brand-light) para fondos seleccionados y estados hover. |
+| **Alternativas** | Azul (descartado por genérico y poco apetitoso para una app de cocina). Verde (asociado a salud pero ya usado por el semáforo, generaría confusión). Antracita o negro (descartado por falta de personalidad). Otros tonos cálidos como ocre o mostaza (descartados por menor contraste). |
+| **Razonamiento** | El terracota es un color cálido asociado a la cocina mediterránea, a vajilla rústica y a ingredientes terrosos. Tiene la suficiente saturación para destacar como color de acción sin ser estridente, y suficiente diferencia con los colores del semáforo para no generar conflictos visuales. |
+| **Implicaciones** | Todos los botones primarios, switches activos, pestañas seleccionadas, y elementos de marca usan #C2714F. Los colores del semáforo (#22C55E verde, #EAB308 amarillo, #F97316 naranja) están reservados exclusivamente para el estado de las recetas y nunca se usan como decoración. |
+
+**D-025 — Tipografía: Playfair Display para títulos, Inter para cuerpo**
+
+| **✓ DECIDIDO** | **Fecha:**** **Mayo 2026 |
+| --- | --- |
+| **Decisión** | KitchenBase usa dos familias tipográficas. Playfair Display (serif elegante) para títulos, cabeceras y nombres de pantalla. Inter (sans-serif neutra) para el resto: cuerpo de texto, etiquetas, botones, interfaz general. |
+| **Alternativas** | Una sola familia para todo (descartado: pierde contraste jerárquico). Otras combinaciones serif + sans (Lora + Open Sans, Merriweather + Inter) descartadas: Playfair Display tiene una personalidad más editorial. Una sola serif (descartado: poco práctica en interfaces densas). |
+| **Razonamiento** | La combinación serif + sans permite que los títulos transmitan calidez y personalidad mientras que el cuerpo mantiene legibilidad clínica. Esta dualidad refuerza el posicionamiento: KitchenBase es una herramienta seria, pero con carácter. |
+| **Implicaciones** | Las cabeceras de pantalla, títulos de receta, y nombres de modal usan Playfair Display. Todo lo demás (botones, listas, descripciones, campos de formulario) usa Inter. Ambas se cargan desde Google Fonts en el index.html. |
+
+**D-026 — Catálogo semilla de ~50 ingredientes universales españoles**
+
+| **✓ DECIDIDO** | **Fecha:**** **Mayo 2026 |
+| --- | --- |
+| **Decisión** | El catálogo global de ingredientes se inicializa con aproximadamente 50 ingredientes universales del recetario español: lácteos básicos, carnes y pescados habituales, verduras y frutas comunes, cereales y legumbres frecuentes, condimentos esenciales. Se poblarán incrementalmente durante el desarrollo de los flujos. |
+| **Alternativas** | Catálogo amplio (varios centenares) desde el inicio (descartado: implica trabajo de poblado y traducción significativo). Catálogo vacío (descartado: imposibilita probar el flujo de búsqueda). Catálogo importado masivamente de Open Food Facts (descartado: genera ruido con productos comerciales). |
+| **Razonamiento** | Un catálogo de ~50 ingredientes representa el corazón del recetario cotidiano y permite construir recetas variadas de prueba. Es suficientemente grande para validar el flujo de búsqueda y la lógica del semáforo, y suficientemente pequeño para mantenerlo limpio y curado a mano. |
+| **Implicaciones** | El admin (que en esta fase eres tú) es responsable de mantener la calidad y consistencia de estos 50 ingredientes. Cada uno debe tener nombre canónico en español, categoría asignada, unidad base correcta, valores nutricionales por 100g/ml verificados, y el flag is_key_default ajustado según la guía de D-007. |
+
+**D-027 — Criterio de fin de prototipo: 5 flujos críticos navegables**
+
+| **✓ DECIDIDO** | **Fecha:**** **Mayo 2026 |
+| --- | --- |
+| **Decisión** | El prototipo en Emergent se considera completo cuando los cinco flujos críticos siguientes son navegables end-to-end con datos reales contra Supabase: (1) añadir ingrediente a la despensa, (2) crear una receta completa, (3) ver el semáforo aplicado sobre la biblioteca, (4) añadir ingredientes faltantes a la lista de la compra desde una receta naranja, (5) confirmar el cocinado de una receta y ver el descuento de inventario. |
+| **Alternativas** | Prototipo completo con todos los detalles pulidos (descartado: el objetivo del prototipo es validar la experiencia central). Prototipo más amplio incluyendo Descubrir y panel de admin (descartado: esas funcionalidades pertenecen a la Ola 2). Prototipo más estrecho con solo despensa y recetas (descartado: sin el semáforo no se valida la propuesta de valor central). |
+| **Razonamiento** | Estos cinco flujos cubren el bucle cerrado que define la propuesta de valor de KitchenBase: tengo ingredientes → puedo cocinar esto → cocino y se descuenta → me falta esto otro → lo compro y se actualiza. Validar este bucle es validar el corazón del producto. |
+| **Implicaciones** | El prototipo NO incluye en su criterio de fin: panel de administración, catálogo comunitario funcional, traducciones reales, notificaciones, escáner de códigos de barras, dictado por voz, grupos familiares, ni publicación en tiendas. |
+
+# **8. Decisiones de Sistema de Recetas (continuación)**
+
+Esta sección agrupa decisiones tomadas durante el desarrollo iterativo del flujo de Mis Recetas. La distinción respecto a la sección 3 es temporal: estas decisiones surgieron al construir el flujo, no en la fase inicial de diseño.
+
+**D-028 — Versionado de recetas públicas al ser editadas**
+
+| **✓ DECIDIDO** | **Fecha:**** **Mayo 2026 |
+| --- | --- |
+| **Decisión** | Cuando un usuario edita una receta propia que ya está en estado público (aprobada por el admin y visible en el catálogo comunitario), los cambios no sobrescriben la versión pública. En su lugar, se genera una nueva versión propuesta que entra en revisión por el admin. Durante el periodo de revisión, el usuario dueño ve su versión editada en su Biblioteca y en Mis Recetas identificada visualmente como ‘en revisión’, mientras que el resto de usuarios sigue viendo la versión pública aprobada original. Cuando el admin aprueba la nueva versión, esta sustituye a la anterior: la versión vieja se elimina y la nueva se convierte en la pública. El usuario dueño debe ser notificado de la aprobación o rechazo. El usuario dueño debe entender este flujo mediante un mensaje claro en el momento de iniciar la edición, antes de que invierta tiempo modificando. |
+| **Alternativas** | Sobrescribir directamente la versión pública (descartado: introduce cambios sin revisión en el catálogo comunitario, lo que rompe la garantía de calidad del catálogo y puede generar problemas de moderación de cara a Apple, ver D-009 y sección 11 del PRD). Bloquear la edición de recetas públicas (descartado: el usuario perdería el control sobre su propia receta). Crear un fork público que coexista con la versión original (descartado: introduce duplicados en el catálogo). |
+| **Razonamiento** | El catálogo comunitario es un espacio compartido cuya calidad depende del proceso de validación por el administrador (D-009). Si los usuarios pudieran modificar sus recetas públicas sin revisión, se invalidaría esa garantía. Al mismo tiempo, el usuario debe seguir siendo dueño de su receta: bloquearle la edición sería arrebatarle el control. El versionado resuelve ambas tensiones. |
+| **Implicaciones** | Esta decisión tiene impacto en el modelo de datos, en la UX y en el flujo de notificaciones, y por eso debe estar registrada desde ahora aunque su implementación se haga en la Ola 2. Implicaciones concretas: (1) Modelo de datos: el esquema actual asume una única versión por receta; habrá que decidir entre añadir una tabla recipe_revisions con histórico, añadir un campo parent_recipe_id en recipes con filas hijas que representen propuestas, o un esquema híbrido. (2) Vista del usuario dueño: necesita distinción visual clara entre ‘versión en revisión’ y ‘versión pública aprobada’. (3) Vista del resto de usuarios: si tienen la receta en su biblioteca, hay que decidir si la actualización es opt-in o automática cuando se aprueba la nueva versión. (4) Notificaciones: el usuario dueño debe recibir aviso, lo que conecta con D-021. (5) Comportamiento ante rechazo: si el admin rechaza la nueva versión, hay que decidir si el cambio se descarta o si el dueño puede conservarlo como borrador privado. (6) Aplicación: esta decisión NO aplica a recetas en estado privado o propuesto. |
+
+# **9. Decisiones de Refinamiento del Flujo**
+
+Esta sección agrupa decisiones tomadas tras la validación del flujo de Mis Recetas (mayo de 2026), cuando el uso real reveló inconsistencias y casos no contemplados en el diseño inicial. Algunas de estas decisiones revisan decisiones previas; el documento mantiene tanto la versión original como la revisada, marcada con el estado correspondiente.
+
+**D-029 — Ampliación del alcance de la cuarentena: ingredientes en cuarentena se admiten en la despensa**
+
+| **✓ DECIDIDO** | **Fecha:**** **Mayo 2026 |
+| --- | --- |
+| **Decisión** | La regla original de D-009 (los ingredientes en cuarentena solo eran utilizables en recetas privadas, no en la despensa) se amplía. Desde esta decisión, los ingredientes en cuarentena se pueden añadir también a la despensa del usuario que los creó, igual que ya se podían añadir a sus recetas. Sigue manteniéndose la restricción original sobre publicabilidad: una receta que use ingredientes en cuarentena no puede pasar a estado público hasta que el admin valide esos ingredientes. |
+| **Alternativas** | Mantener D-009 sin cambios (descartado: rompe el bucle conceptual del producto. Un usuario con un ingrediente real en casa que no está en el catálogo no puede registrarlo en su despensa, lo que deja la despensa incompleta y degrada el semáforo). Solución intermedia: permitir solo para básicos sin cantidad (descartado: arbitrario y poco intuitivo, mezcla dos conceptos distintos sin razón clara). |
+| **Razonamiento** | El diseño original priorizaba la calidad del catálogo global sobre la utilidad inmediata para el usuario. Esto tenía sentido en un escenario donde el admin valida ingredientes rápidamente. Pero en el MVP, donde el admin es el propio product owner trabajando manualmente, el ciclo de validación es lento y el usuario se queda bloqueado. La revisión inclina el equilibrio hacia la utilidad sin sacrificar la integridad del catálogo: los ingredientes en cuarentena pueden existir en la despensa de su creador, pero nunca llegan al catálogo global sin revisión. La señal de ‘datos no validados’ se propaga a través del campo has_pending_ingredients en cualquier receta que dependa de ellos. |
+| **Implicaciones** | (1) Modelo de datos: la tabla pantry_items se modifica para aceptar XOR entre ingredient_id (catálogo global) y user_ingredient_id (cuarentena), con la misma restricción CHECK que ya tiene recipe_ingredients. Ver Documento 2 sección 5 actualizada. (2) Trigger de fusión: cuando el admin fusiona un user_ingredient con un ingredient del catálogo, las filas de pantry_items que referenciaban el user_ingredient_id deben actualizarse automáticamente para apuntar al ingredient_id correspondiente. Esto se suma al trigger ya descrito para recipe_ingredients. (3) Semáforo: la lógica del semáforo (Documento 2 sección 7) trata los ingredientes en cuarentena de la despensa como disponibles para el cálculo. Cualquier receta cuyo cálculo de disponibilidad cruce un ingrediente en cuarentena (porque ese ingrediente está en su lista de ingredientes y también en la despensa del usuario) hereda has_pending_ingredients = TRUE como señal de que parte del cómputo se apoya en datos no validados. (4) UX: la pantalla de Despensa muestra los ingredientes en cuarentena con un indicador visual sutil (‘pendiente de validar’) que no impide su uso. (5) RLS: las políticas de seguridad de pantry_items deben permitir referencias a user_ingredients solo si el creador del user_ingredient coincide con el dueño del pantry_item. |
+
+**D-030 — Recetas con título duplicado: aviso de confirmación, no bloqueo**
+
+| **✓ DECIDIDO** | **Fecha:**** **Mayo 2026 |
+| --- | --- |
+| **Decisión** | Cuando el usuario intenta guardar una receta (o sale del paso 1 del wizard) con un título que coincide exactamente con el de otra receta suya ya existente, la app muestra un aviso de confirmación: ‘Ya tienes una receta llamada [título]. ¿Quieres guardarla igualmente?’. El usuario puede confirmar (y se crea como receta independiente) o cancelar (y vuelve a editar el título). La coincidencia es por usuario, por título exacto tras normalizar mayúsculas/minúsculas y espacios al inicio/fin. No se considera coincidencia con recetas en estado borrador (is_draft = TRUE). |
+| **Alternativas** | Permitir duplicados sin alerta (descartado: el comportamiento actual; el usuario puede crear duplicados sin darse cuenta, especialmente al volver a una receta que ya hizo). Bloquear con error (descartado: si el usuario quiere dos variantes con el mismo nombre base, le obligamos a inventar diferenciadores artificiales como ‘v2’, ‘rojo’, etc., lo cual es paternalista y resta libertad). Bloquear y sugerir nombre alternativo automáticamente (descartado: complejidad innecesaria para un caso poco frecuente). |
+| **Razonamiento** | La opción ‘permitir con aviso’ es la que mejor equilibra libertad y calidad. No le quita al usuario el control sobre sus propias recetas (si realmente quiere dos ‘Tortilla’, puede tenerlas), pero le obliga a tomar una decisión consciente. En la práctica, la mayoría de duplicados son accidentales: el usuario empieza a crear una receta que ya tenía sin darse cuenta. El aviso convierte ese accidente en una elección. |
+| **Implicaciones** | (1) Modelo de datos: no requiere cambios. No se añade restricción UNIQUE en (user_id, title) porque los duplicados están permitidos si el usuario los confirma. (2) UX: el aviso aparece al pulsar ‘Siguiente’ en el paso 1 del wizard si el título coincide con una receta existente del usuario, o al pulsar ‘Guardar receta’ en el paso 5 si entre tanto se editó el título y ahora coincide. (3) Lógica: la comprobación es contra recetas con is_draft = FALSE del mismo user_id. La normalización ignora diferencias en mayúsculas/minúsculas y trims espacios. (4) Borradores: si el título de un borrador coincide con una receta completada, el borrador puede continuar sin aviso (es una receta en construcción, todavía puede cambiar); el aviso solo se dispara al intentar completarlo. (5) Performance: la consulta es trivial (un SELECT con índice ya existente en user_id) y se ejecuta solo en transiciones específicas del wizard, no en cada keystroke. |
+
+**D-031 — Detección de duplicados al crear ingredientes en cuarentena**
+
+| **✓ DECIDIDO** | **Fecha:**** **Mayo 2026 |
+| --- | --- |
+| **Decisión** | Cuando un usuario intenta crear un ingrediente nuevo (que entraría en cuarentena) desde el modal de añadir a la despensa, el sistema bloquea la creación si el nombre normalizado coincide con un ingrediente ya existente, ya sea en el catálogo global o en la propia cuarentena del usuario. El bloqueo aplica aunque el usuario no tenga ese ingrediente en su despensa: lo que importa es que el ingrediente exista en el catálogo. En lugar de crear un duplicado, el sistema muestra el ingrediente coincidente destacado en los resultados de búsqueda con un texto de ayuda que invita a seleccionarlo. La normalización ignora mayúsculas/minúsculas y espacios al inicio/fin, igual que en D-030, y es sensible a acentos. |
+| **Alternativas** | Bloquear silenciosamente ocultando el botón sin explicación (descartado: el usuario que escribe ’AJO’ y no ve ni resultado ni opción de crear puede pensar que la app está rota). Avisar y permitir crear igualmente, como en D-030 (descartado: no hay justificación legítima para querer un ’ajo’ en cuarentena cuando ’Ajo’ ya existe en el catálogo; la libertad que tenía sentido para títulos de receta duplicados no aplica aquí). Permitir el duplicado y dejar que el admin lo resuelva después (descartado: el comportamiento que generó el bug; contamina el catálogo, bloquea la publicabilidad de recetas y rompe el cálculo del semáforo al no hacer coincidir el ingrediente de cuarentena con el del catálogo). |
+| **Razonamiento** | El catálogo de ingredientes es la fuente de verdad del producto. Un duplicado en cuarentena que sombrea un ingrediente del catálogo genera dos entidades distintas donde el usuario entiende una sola: el admin tiene que limpiarlo a mano, las recetas que lo usan no pueden hacerse públicas, y el semáforo falla de forma sutil porque no cruza el ingrediente de cuarentena con el del catálogo. Bloquear con un mensaje explícito evita el duplicado sin dejar al usuario confundido. El bug que motivó esta decisión se descubrió en pruebas reales: al crear ’ajo’ existiendo ya ’Ajo’ en el catálogo, el sistema generó un duplicado en cuarentena. |
+| **Implicaciones** | (1) Defensa en profundidad en dos capas. Frontend: la búsqueda del modal busca en ingredients (catálogo) y user_ingredients (cuarentena propia) de forma case-insensitive y trim-insensitive; si hay coincidencia exacta normalizada, el botón ’Crear ingrediente nuevo’ no aparece y el ingrediente coincidente se muestra destacado. Backend: un trigger PostgreSQL (check_user_ingredient_uniqueness en la migración 007) rechaza con error 23505 cualquier INSERT de user_ingredients cuyo nombre normalizado coincida con un ingrediente del catálogo o con otro de la cuarentena del mismo usuario. (2) Limpieza de datos: se aplicó un script puntual (cleanup_001_quarantine_duplicates) que reasignó las referencias de recipe_ingredients y pantry_items al ingrediente del catálogo y borró los user_ingredients duplicados ya existentes. (3) Analytics: dos eventos PostHog nuevos (ingredient_creation_blocked_catalog_match e ingredient_creation_blocked_quarantine_match) con una propiedad ’via’ que indica en qué capa se bloqueó. (4) No requiere cambios de esquema más allá del trigger. (5) Esta decisión complementa a D-029, que abrió la posibilidad de tener ingredientes de cuarentena en la despensa; D-031 pone las reglas que impiden que esa apertura genere duplicados. |
+
+# **10. Decisiones de Corrección y Endurecimiento del Motor**
+
+**D-032 — El motor del semáforo identifica la unidad base por units.is_base, no por texto del símbolo**
+
+| **✓ DECIDIDO** | **Fecha:**** **Mayo 2026 |
+| --- | --- |
+| **Decisión** | El motor del semáforo determina si una unidad es la unidad base de un ingrediente consultando el campo canónico units.is_base del catálogo (solo la fila de gramos y la de mililitros lo tienen en TRUE), nunca comparando el texto de units.symbol contra ingredients.base_unit. Toda conversión a unidad base pasa por la única función kb_convert_to_base, incluida la rama de ingredientes en cuarentena de compute_recipe_status, que hasta ahora hacía su propia comparación textual en paralelo. Además se endurece la lectura de la despensa: cuando kb_find_pantry_match no devuelve fila, el motor trata explícitamente el caso como ‘no está en la despensa’ sin leer campos de un registro inexistente. |
+| **Alternativas** | Mantener la comparación por symbol (descartada: symbol es texto libre y opcional según el Modelo de Datos; depende de que se escriba carácter a carácter idéntico a ‘g’ o ‘ml’, y cualquier variante como ‘gr’, ‘G’ o ‘gramo’ rompe la conversión y hace que el semáforo informe un color incorrecto, que es el peor fallo posible del producto). Hardcodear las cadenas ‘g’ y ‘ml’ dentro del motor (descartada: duplica en el código una verdad que ya vive en el catálogo units mediante is_base, y vuelve a divergir en cuanto el catálogo cambie). Mantener dos lógicas de conversión separadas, una para catálogo y otra para cuarentena (descartada: rompe la regla de fuente única de conversión y permite que las dos ramas se comporten distinto). |
+| **Razonamiento** | El Modelo de Datos ya define is_base como el campo canónico para identificar la unidad base del sistema. El motor de la migración 006 no lo usaba: comparaba units.symbol con ingredients.base_unit, y funcionaba solo porque los datos sembrados daban la casualidad de que el símbolo de la unidad base coincidía exactamente con ‘g’ y ‘ml’. Era una dependencia frágil y no decidida, no una elección de diseño. Apoyarse en is_base elimina la fragilidad sin añadir nada nuevo y respeta la fuente única de conversión. Como el semáforo es la promesa central de KitchenBase, que sea de fiar es prioritario. |
+| **Implicaciones** | (1) Se reescribe kb_convert_to_base para resolver la coincidencia de unidad base por units.is_base. (2) La rama de cuarentena de compute_recipe_status deja de comparar símbolos por su cuenta y pasa por la misma lógica canónica. (3) Se blinda la lectura de kb_find_pantry_match cuando no hay coincidencia en la despensa. (4) No cambia el comportamiento observable mientras los datos estén bien sembrados; es un endurecimiento que evita fallos silenciosos del semáforo con datos reales. (5) Obliga a actualizar la sección 7.4 del Modelo de Datos (hecho en v1.4). (6) Forma parte de la etapa E1 de perfeccionamiento del prototipo; la etapa E2 (higiene DT-002) consolida estas funciones en migraciones versionadas. |
+| **Nota de seguimiento (mayo 2026)** | La verificación de E1 demostró que apoyarse solo en is_base no elimina del todo la fragilidad: como hay dos filas con is_base = TRUE (gramo y mililitro), el motor todavía necesita el símbolo de texto para distinguir cuál es masa y cuál es volumen, de modo que editar el símbolo de una fila base aún rompería la conversión. D-033 cierra ese hueco residual introduciendo un campo canónico de dimensión (masa/volumen) en units, eliminando la última dependencia del texto. D-032 queda así complementada, no revertida: todo el trabajo de E1 (comparación por unit_id, unificación de la rama de cuarentena, guarda de despensa) sigue vigente. |
+
+**D-033 — Dimensión canónica de unidad (masa/volumen) y unidad predeterminada por ingrediente**
+
+| **✓ DECIDIDO** | **Fecha:**** **Mayo 2026 |
+| --- | --- |
+| **Decisión** | Se añade a la tabla units un campo dimension con valores ‘mass’ o ‘volume’. La dimensión es una propiedad de la unidad, no del ingrediente: el gramo y el kilogramo son masa; el mililitro, el litro, la cucharada y la taza son volumen. El motor del semáforo identifica la unidad base de un ingrediente combinando is_base = TRUE con la dimensión correspondiente al base_unit del ingrediente, eliminando la última dependencia del símbolo de texto. Además se añade a la tabla ingredients un campo default_unit_id (clave foránea a units) que indica la unidad en la que se muestra ese ingrediente por defecto; el usuario puede luego trabajar en cualquier otra unidad reconocida, y el sistema convierte mediante unit_conversions. La dimensión NO se duplica en ingredients: se deduce de la unidad base del ingrediente, manteniendo una única fuente de verdad. |
+| **Alternativas** | Duplicar dimension también en ingredients (descartada: crea dos fuentes para el mismo dato; si la dimensión del ingrediente y la de su unidad base discrepan, el sistema no tiene autoridad para resolver el conflicto, que es justo la clase de fragilidad que se quiere evitar). Mantener solo is_base sin dimensión, como dejó E1 (descartada: deja el hueco residual descrito en la nota de D-032; basta editar el símbolo de una fila base para romper el semáforo). Convertir ingredients.base_unit de texto a UUID con FK a units (descartada para el MVP: arreglo más profundo pero invasivo, obliga a migrar datos vivos y a tocar varias funciones y posiblemente frontend; además ata el ingrediente a una sola unidad, lo que choca con el objetivo de que el usuario trabaje en cualquier unidad de la dimensión correcta). |
+| **Razonamiento** | La dimensión (masa frente a volumen) es intrínseca a la unidad y universal, no varía por ingrediente, así que su sitio natural es units. Esto resuelve a la vez una necesidad de robustez del motor (D-032 quedó incompleta) y una necesidad de producto que surgió al pensar el alta de ingredientes: quien da de alta un ingrediente declara si se mide por masa o por volumen, cuál es su unidad predeterminada de visualización, y sus equivalencias. Las equivalencias ya existían en unit_conversions y no se tocan. La unidad predeterminada es lo único nuevo en ingredients. El resultado cierra la fragilidad sin inflar el alcance ni atar el ingrediente a una unidad única. |
+| **Implicaciones** | (1) Modelo de Datos: nuevo campo units.dimension (‘mass’/‘volume’) y nuevo campo ingredients.default_unit_id (FK a units, nulable hasta poblarse). Actualiza el Modelo de Datos a v1.5 (tablas units e ingredients y sección 7.4). (2) Motor: kb_base_unit_id pasa a resolver la unidad base combinando is_base = TRUE y dimension, sin comparar símbolos. (3) Invariante de coherencia a respetar (sobre todo por el futuro panel de admin): la unidad predeterminada de un ingrediente, y cualquier unidad que se le ofrezca al usuario, debe tener una fila en unit_conversions hacia la unidad base del ingrediente, o ser la propia unidad base; en caso contrario el motor reportaría unit_conversion_unavailable. (4) Alcance: se implementa AHORA solo la capa de datos (migración 009: las dos columnas + poblar las filas base existentes + ajustar kb_base_unit_id). La interfaz de alta de ingredientes (escoger masa/volumen, predeterminada y equivalencias) pertenece al panel de administración, que está fuera del MVP; se registra como trabajo futuro de Ola 2. (5) Complementa a D-032, no la revierte. |
+
+**D-034 — Modelo de unidades de conteo e imprecisas: el conteo es una unidad con conversión, no un eje nuevo**
+
+| **✓ DECIDIDO** | **Fecha:**** **Mayo 2026 |
+| --- | --- |
+| **Decisión** | Las unidades de conteo de piezas (‘unidad’, ‘diente’) y las imprecisas (‘pizca’) se modelan como unidades normales que se reducen a la unidad base del ingrediente (g/ml) mediante una fila en unit_conversions, sin introducir una dimensión ‘count’ ni permitir que base_unit sea ‘unit’. La regla de oro —todo ingrediente aterriza en gramos o mililitros— se mantiene intacta. Se añade al catálogo la unidad ‘diente’; ‘unidad’ se conserva como pieza natural genérica. Se corrige el invariante de default_unit_id introducido en D-033: la unidad predeterminada (y cualquier unidad ofrecida al usuario para ese ingrediente) NO necesita compartir dimensión con el base_unit; basta con que sea la unidad base o tenga una fila de conversión hacia ella. Esto legaliza unidades de conteo (dimension NULL) como predeterminadas: huevo en unidades, ajo en dientes. El campo dimension conserva su único papel esencial —que el motor distinga gramo de mililitro entre las dos filas base— y deja de ser una restricción sobre las predeterminadas. La pizca y similares (‘al gusto’, ‘c/s’) se tratan como no condicionantes del semáforo apoyándose en que sus ingredientes (sal, especias) son básicos, que el motor cuenta como siempre disponibles. La traducción de los gramos faltantes de vuelta a piezas (‘falta 1 huevo’ en vez de ‘faltan 50 g’) es responsabilidad de la pantalla, no del motor, que queda intacto tras E1.1. |
+| **Alternativas** | Permitir base_unit = ‘unit’ para lo que solo se cuenta, como el huevo (descartada como modelo general: es más limpia solo para esa clase estrecha, rompe el supuesto ‘todo es g/ml’ del que cuelgan los valores nutricionales por 100 g/ml, y no resuelve el caso difícil del ajo, que aparece a la vez en dientes y en gramos —un único base_unit por ingrediente sería lossy—. Se exploró expresamente intentando que ganara esta opción más vistosa, y se rompió en el ajo). Añadir una tercera dimensión ‘count’ al enum mass/volume (descartada: es etiqueta sin mecanismo; conteo→gramos es intrínsecamente específico por ingrediente, así que seguiría necesitando exactamente las mismas filas de conversión, y además revertiría D-033 recién decidida sin aportar nada operativo). Catálogo rico de unidades de conteo desde ya —cabeza, loncha, rebanada, ramita— (postpuesto a Ola 2: riqueza de catálogo sin panel de admin que la mantenga; ahora solo entra ‘diente’, el caso real del ajo). Marca explícita de ‘unidad no condicionante’ para pizca/al gusto (postpuesta: para el MVP apoyarse en básicos lo resuelve sin coste; se podrá formalizar más adelante si se necesita rigor). |
+| **Razonamiento** | La prueba de fuego es el ajo, no el huevo. El huevo solo se cuenta y base_unit = ‘unit’ le quedaría limpio; pero el ajo aparece en dos familias de unidades a la vez (una receta en ‘dientes’, otra en ‘g’; la despensa en ‘cabeza’ o en ‘g’), y las cuatro combinaciones deben poder compararse entre sí. La regla de oro de reducir todo a g/ml hace que esa comparación salga sola (2 dientes → 10 g; 1 cabeza → 40 g; 40 ≥ 10 → verde). La tabla unit_conversions ya es el puente correcto: una tabla de cambio por ingrediente, porque el peso de una pieza varía según el ingrediente. El conteo no necesita un eje nuevo, necesita filas de conversión. Esta vía lo hace todo —ajo en ambas direcciones, huevo, harina en tazas, pizca vía básicos— reutilizando lo que ya existe, mantiene el motor congelado tras E1.1, y es coherente con D-032/D-033 en vez de revertirlas. La opción más ‘completa’ en apariencia (dimensión ‘count’ o base_unit ‘unit’) añadía un eje sin resolver el caso difícil. |
+| **Implicaciones** | (1) Modelo de Datos (actualizado a v1.6): se corrige el invariante de default_unit_id (deja de exigir coincidencia de dimensión; exige ser unidad base o tener conversión hacia ella); se aclara que dimension solo desambigua gramo/mililitro entre las dos filas base y NO restringe qué unidades admite un ingrediente; se añade una nota sobre el modelo de unidades de conteo e imprecisas. Corrige además una contradicción latente de v1.5, donde el ejemplo ‘unidades para los huevos’ chocaba con el invariante de coincidencia de dimensión. (2) Catálogo de unidades: se añade ‘diente’ (dimension NULL, unit_system culinary); ‘unidad’ se mantiene como pieza natural genérica; el resto de unidades de pieza queda para Ola 2. (3) Datos semilla: sembrar conversiones de los pocos ingredientes de conteo existentes (huevo ≈ 50 g; ajo: 1 diente ≈ 5 g). Esto irá en una migración futura (010) junto con el alta de ‘diente’. El motor NO se toca. (4) Pizca / no condicionantes: se modelan sus ingredientes como básicos para que el semáforo no los mire; el caso raro (pizca de ingrediente caro no básico) se acepta como aproximado y no bloqueante en el MVP. (5) Pantalla: la traducción gramos→piezas en lo que falta es presentación; pertenece al Mapa de Pantallas / un prompt de UI futuro. (6) Límite aceptado y ya documentado: los ingredientes de cuarentena no tienen filas en unit_conversions, así que uno usado en una unidad de conteo distinta de su base seguirá cayendo en unit_conversion_unavailable. (7) Complementa a D-033, corrigiendo su invariante; no toca el motor congelado por E1.1. |
+
+# **11. Decisiones de Higiene del Repositorio y Proceso**
+
+Esta sección agrupa decisiones tomadas durante la etapa E2 de perfeccionamiento, centrada no en el producto sino en la fiabilidad del repositorio como fuente de verdad duradera. Surgen de un patrón que se repitió dos veces: el trabajo técnico estaba hecho y funcionaba, pero no estaba donde tenía que estar para sobrevivir al contenedor de desarrollo.
+
+**D-035 — Sincronización de schema.sql como snapshot del estado vivo (etapa E2, pieza 1)**
+
+| **✓ DECIDIDO** | **Fecha:**** **Mayo 2026 |
+| --- | --- |
+| **Decisión** | El fichero frontend/src/sql/schema.sql se sincroniza para que sea un snapshot fiel del estado actual de la base de datos viva tras aplicar las migraciones 001 a 010, no el esquema fundacional original. El snapshot fusiona las diez reformas en un único retrato del esquema actual (13 tablas, las dos columnas nuevas de units.dimension e ingredients.default_unit_id, el patrón XOR de pantry_items, las funciones del motor del semáforo, los triggers y las políticas RLS reales), con una cabecera honesta que declara que es un snapshot del estado vivo y no el historial de migraciones. La consolidación del historial de migraciones en una secuencia numerada y reaplicable sobre una base vacía (lo que pide OE-004) se mantiene como pieza 2 futura de E2, separada de esta. |
+| **Alternativas** | Consolidar de golpe todo el historial de migraciones en ficheros numerados reaplicables (postpuesto a la pieza 2 de E2: es más ambicioso y conviene separarlo del simple snapshot para no mezclar dos trabajos distintos en un cambio). Dejar schema.sql como el esquema fundacional y confiar solo en la base viva (descartada: rompe la utilidad del fichero como referencia; cualquier agente o clon nuevo que lea schema.sql vería 13 tablas obsoletas sin las reformas, justo el desfase que generó confusión durante la verificación). Auditar a la vez la cobertura RLS y limpiar el seed de pruebas (postpuesto a la pieza 3 de E2: trabajo legítimo pero de otro alcance). |
+| **Razonamiento** | El fichero schema.sql es la única representación del esquema que viaja con el código. Si miente sobre el estado real, engaña a quien lo lea —incluido un futuro Claude Code en la fase React Native, u otra instancia del agente—. Sincronizarlo como snapshot es el arreglo más barato que restaura su valor como referencia, sin asumir todavía el trabajo mayor de reconstruir el historial completo de migraciones. Se eligió descubrir el estado real de la base a ciegas (dejando que Emergent leyera el catálogo de PostgreSQL sin un checklist previo) para evitar que el agente se autoconvenciera de un estado sugerido en vez del real. |
+| **Implicaciones** | (1) Repositorio: schema.sql pasa de ~390 líneas (fundacional, 13 tablas sin reformas) a ~999 líneas (snapshot vivo con las 10 migraciones fusionadas). (2) Proceso: el cierre formal de E2 exige que el snapshot esté no solo escrito en el contenedor sino publicado en el GitHub que el usuario ve; ver la lección OE-005 en el documento de Deuda Técnica. (3) Quedan abiertas como trabajo futuro la pieza 2 (consolidar migraciones 001-010 en una secuencia numerada continua y reaplicable, que materializa OE-004) y la pieza 3 (auditar cobertura RLS y limpiar el seed de pruebas P4.1). (4) No cambia el esquema vivo ni el motor del semáforo, congelado tras E1.1: es una operación de fidelidad documental sobre el repositorio, no un cambio de datos. |
+
+*Añadir una entrada por cada decisión relevante tomada durante el desarrollo. No esperar a que el razonamiento se olvide.*
+
+*KitchenBase · Registro de Decisiones v1.8 · Pág. 1*

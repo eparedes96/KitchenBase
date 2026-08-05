@@ -1,0 +1,396 @@
+🗄️
+
+**KitchenBase**
+
+Modelo de Datos — Documento 2
+
+Versión 1.7 · Mayo 2026
+
+*Backend: Supabase (PostgreSQL)*
+
+*Nota de revisión v1.7 (mayo 2026): correcciones de fidelidad sin cambio de esquema. (1) Se corrige el conteo de tablas: el modelo tiene TRECE tablas, no catorce; el "14" de versiones anteriores era un error de conteo histórico arrastrado, verificado contra el inventario real de la base viva durante la etapa E2. Las trece tablas están todas presentes y ninguna falta. (2) La sección 7.4 amplía el historial de implementación del motor para reflejar las migraciones realmente aplicadas (006 a 010), no solo la 006: el motor del semáforo quedó congelado tras la etapa E1.1 (migración 009) y la 010 solo añade datos semilla de conteo sin tocar funciones. (3) Se referencia la decisión D-035 (snapshot de schema.sql). El esquema en sí permanece idéntico a v1.6.*
+
+*Nota de revisión v1.6 (mayo 2026): se completa el modelo de unidades para ingredientes de conteo e imprecisos (D-034). Se corrige el invariante de ingredients.default_unit_id —deja de exigir coincidencia de dimensión con el base_unit, que prohibía indebidamente predeterminadas de conteo como** **‘**unidad**’** **o** **‘**diente**’**— y se aclara que units.dimension solo desambigua las dos filas base, sin restringir qué unidades admite un ingrediente. Se documenta que el conteo y lo impreciso se modelan como unidades normales con conversión por ingrediente en unit_conversions, manteniendo intacta la regla de oro g/ml y el motor congelado tras E1.1. El catálogo de conteo del MVP se limita a** **‘**unidad**’** **y** **‘**diente**’**. La interfaz de alta de ingredientes y el catálogo rico de unidades pertenecen al panel de administración (Ola 2). El resto del esquema permanece idéntico a v1.5.*
+
+*Nota de revisión v1.5 (mayo 2026): se añade el campo units.dimension (**‘**mass**’**/**‘**volume**’**) y el campo ingredients.default_unit_id (FK a units, nulable). El motor del semáforo (sección 7.4) identifica la unidad base combinando is_base + dimension, completando lo iniciado en v1.4. Refleja la decisión D-033. La interfaz de alta de ingredientes que usará estos campos pertenece al panel de administración (fuera del MVP). El resto del esquema permanece idéntico.*
+
+*Nota de revisión v1.4 (mayo 2026): la sección 7.4 precisa que el motor del semáforo identifica la unidad base de un ingrediente mediante el campo canónico units.is_base, nunca por comparación de texto del símbolo. Refleja la decisión D-032 del Registro de Decisiones. El resto del esquema permanece idéntico a v1.3.*
+
+# **1. Introducción y Convenciones**
+
+Este documento describe el esquema completo de la base de datos de KitchenBase tal como debe implementarse en Supabase (PostgreSQL). Está redactado en lenguaje humano para que cualquier persona del proyecto pueda entenderlo, y en lenguaje técnico suficiente para que Claude Code pueda implementarlo sin ambigüedad.
+
+## **1.1 Convenciones de nomenclatura**
+
+Todos los nombres de tablas están en minúsculas y en plural (ingredients, recipes). Las claves primarias se llaman siempre id y son de tipo UUID generado automáticamente. Las claves foráneas siguen el patrón nombre_de_tabla_en_singular_id (por ejemplo, user_id, recipe_id). Los campos de fecha y hora se almacenan siempre en UTC con zona horaria (TIMESTAMPTZ). Los campos booleanos empiezan por is_ o has_ para facilitar su lectura (is_basic, is_key, is_key_default).
+
+## **1.2 Seguridad: Row Level Security (RLS)**
+
+Supabase implementa Row Level Security (RLS), un sistema que permite definir reglas directamente en la base de datos para que cada usuario solo pueda ver y modificar sus propios datos, independientemente de lo que haga el código de la aplicación. En este documento se indica para cada grupo de tablas qué política RLS debe aplicarse, pero la implementación detallada se hará durante el desarrollo con Claude Code.
+
+## **1.3 Estructura general del modelo**
+
+El modelo tiene trece tablas organizadas en cuatro grupos lógicos. (Nota v1.7: versiones anteriores de este documento hablaban de "catorce tablas"; era un error de conteo arrastrado, corregido tras verificar el inventario real de la base viva en la etapa E2. Las trece están todas y ninguna falta.) El grupo de catálogo global agrupa las tablas que contienen datos compartidos por todos los usuarios: categorías de ingredientes, el catálogo de unidades culinarias, los ingredientes validados con sus conversiones de unidad, y la tabla de traducciones para soporte multiidioma. El grupo de cuarentena contiene la tabla de ingredientes creados por usuarios y pendientes de validación por el administrador. El grupo de recetas agrupa las tablas de recetas, sus ingredientes y sus pasos. El grupo de datos de usuario contiene las tablas privadas de cada usuario: despensa, biblioteca, lista de la compra e historial de cocina.
+
+## **1.4 Cambios respecto a versiones anteriores**
+
+La versión 1.2 modifica la estructura de pantry_items para permitir referenciar tanto ingredientes del catálogo global como ingredientes en cuarentena, alineando esta tabla con el patrón XOR que ya existía en recipe_ingredients. Este cambio refleja la revisión de la decisión D-009 (ver Registro de Decisiones D-029). El resto del esquema permanece idéntico a v1.1.
+
+# **2. Catálogo Global**
+
+Las tablas de este grupo contienen datos compartidos por todos los usuarios. Solo el administrador puede crear, modificar o eliminar registros en ellas. La política RLS para estas tablas es: SELECT permitido para todos los usuarios autenticados, INSERT / UPDATE / DELETE restringido al rol de administrador.
+
+Tabla: **ingredient_categories**
+
+*Categorías de ingredientes del catálogo global (Lácteos, Carnes, Verduras, etc.). Son creadas y mantenidas por el administrador. El nombre de la categoría es traducible mediante la tabla translations.*
+
+| **Campo** | **Tipo** | **Nulo** | **Descripción** |
+| --- | --- | --- | --- |
+| id | UUID | NO | Clave primaria. Generada automáticamente. |
+| name | TEXT | NO | Nombre canónico de la categoría en el idioma base (español). Ej: ‘Lácteos’. Las traducciones a otros idiomas se guardan en la tabla translations. |
+| icon | TEXT | SÍ | Nombre del icono que representa la categoría en la interfaz. Ej: ‘leaf’, ‘meat’. |
+| sort_order | INTEGER | SÍ | Orden de presentación en la interfaz. Permite controlar en qué secuencia aparecen las categorías. |
+| created_at | TIMESTAMPTZ | NO | Fecha y hora de creación. Se rellena automáticamente. |
+
+Tabla: **units**
+
+*Catálogo centralizado de todas las unidades de medida reconocidas por el sistema. Unifica métricas, culinarias e imperiales en un único lugar, evitando duplicados y variantes ortográficas. La tabla unit_conversions referencia esta tabla en lugar de usar texto libre. El nombre de la unidad es traducible.*
+
+| **Campo** | **Tipo** | **Nulo** | **Descripción** |
+| --- | --- | --- | --- |
+| id | UUID | NO | Clave primaria. |
+| name | TEXT | NO | Nombre canónico de la unidad en español. Ej: ‘cucharada’, ‘taza’, ‘gramo’, ‘onza’. Único en la tabla. |
+| symbol | TEXT | SÍ | Símbolo abreviado estándar. Ej: ‘g’, ‘ml’, ‘tbsp’, ‘cup’, ‘oz’. |
+| unit_system | TEXT | NO | Sistema al que pertenece la unidad. Ver enum abajo. |
+| is_base | BOOLEAN | NO | TRUE si esta unidad es la unidad base del sistema (gramos para peso, mililitros para volumen). Solo dos unidades tienen este campo en TRUE. |
+| dimension | TEXT | SÍ | Magnitud física que mide la unidad: ‘mass’ (masa) o ‘volume’ (volumen). Es una propiedad intrínseca y universal de la unidad, no depende del ingrediente. Gramo y kilogramo son ‘mass’; mililitro, litro, cucharada, cucharadita y taza son ‘volume’. Nulable: las unidades de conteo de piezas (ej. ‘unidad’, ‘diente’) y las imprecisas (ej. ‘pizca’) no son ni masa ni volumen y quedan con dimension NULL. El único trabajo esencial de este campo es permitir al motor distinguir cuál de las dos filas base (gramo y mililitro, ambas con is_base = TRUE) corresponde al base_unit de un ingrediente; combina is_base = TRUE con la dimensión que corresponde a su base_unit (‘mass’ para ‘g’, ‘volume’ para ‘ml’), sin comparar el símbolo de texto (ver D-033 y sección 7.4). dimension NO restringe qué unidades pueden usarse con un ingrediente ni cuál puede ser su predeterminada: eso lo gobierna la existencia de una fila en unit_conversions (ver default_unit_id y D-034). Una unidad de dimension NULL es perfectamente válida para un ingrediente siempre que tenga su conversión a la unidad base. |
+
+**Enum unit_system en units:**** **metric · culinary · imperial
+
+**Enum dimension en units:**** **mass · volume
+
+Tabla: **ingredients**
+
+*Catálogo global de ingredientes validados. Cada ingrediente tiene una unidad base (g o ml), valores nutricionales por 100 unidades de esa base, y un indicador de si se considera clave por defecto al usarse en recetas. Solo el administrador crea o aprueba entradas en esta tabla.*
+
+| **Campo** | **Tipo** | **Nulo** | **Descripción** |
+| --- | --- | --- | --- |
+| id | UUID | NO | Clave primaria. |
+| name | TEXT | NO | Nombre canónico del ingrediente en español. Único en el catálogo. Las traducciones se guardan en la tabla translations. |
+| category_id | UUID | NO | Clave foránea a ingredient_categories. |
+| base_unit | TEXT | NO | Unidad base para valores nutricionales y conversiones: ‘g’ (gramos) o ‘ml’ (mililitros). |
+| is_key_default | BOOLEAN | NO | Valor por defecto de is_key cuando este ingrediente se añade a una receta. TRUE para proteínas principales, carbohidratos estructurales y verduras protagonistas. FALSE para condimentos, especias y ingredientes de acabado. El usuario puede modificarlo receta a receta. |
+| default_unit_id | UUID | SÍ | Clave foránea a units. Unidad en la que este ingrediente se muestra por defecto en la interfaz (ej. gramos para la harina, mililitros para el aceite, unidades para los huevos, dientes para el ajo). El usuario puede trabajar luego en cualquier otra unidad reconocida; el sistema convierte mediante unit_conversions. Nulable hasta poblarse. Invariante de coherencia (corregido en v1.6, D-034): la unidad predeterminada —y cualquier unidad que se ofrezca al usuario para este ingrediente— debe ser la unidad base del ingrediente o tener una fila en unit_conversions hacia ella; NO necesita compartir dimensión con el base_unit. Esto permite expresamente que una unidad de conteo (dimension NULL), como ‘unidad’ o ‘diente’, sea la predeterminada de un ingrediente cuyo base_unit es ‘g’ o ‘ml’ (ej. huevo en unidades, ajo en dientes), siempre que exista la conversión a gramos. Nuevo en v1.5 (D-033); invariante corregido en v1.6 (D-034). |
+| external_db_id | TEXT | SÍ | ID del ingrediente en la base de datos nutricional externa (Open Food Facts / USDA). Permite sincronización futura. |
+| kcal_per_100 | NUMERIC(8,2) | SÍ | Kilocalorías por 100g o 100ml. |
+| protein_per_100 | NUMERIC(8,2) | SÍ | Proteínas en gramos por 100g o 100ml. |
+| carbs_per_100 | NUMERIC(8,2) | SÍ | Carbohidratos en gramos por 100g o 100ml. |
+| fat_per_100 | NUMERIC(8,2) | SÍ | Grasas en gramos por 100g o 100ml. |
+| fiber_per_100 | NUMERIC(8,2) | SÍ | Fibra en gramos por 100g o 100ml. |
+| created_at | TIMESTAMPTZ | NO | Fecha de creación. |
+| created_by_admin_id | UUID | SÍ | ID del administrador que creó o aprobó el ingrediente. |
+
+Tabla: **unit_conversions**
+
+*Factores de conversión específicos por ingrediente. Permite transformar cualquier unidad reconocida del catálogo units a la unidad base del ingrediente (g o ml). La conversión es específica por ingrediente porque el peso varía: 1 cucharada de harina pesa distinto que 1 cucharada de miel.*
+
+| **Campo** | **Tipo** | **Nulo** | **Descripción** |
+| --- | --- | --- | --- |
+| id | UUID | NO | Clave primaria. |
+| ingredient_id | UUID | NO | Clave foránea a ingredients. |
+| unit_id | UUID | NO | Clave foránea a units. Referencia la unidad cuya conversión se define aquí. Este campo reemplaza el texto libre que existía en versiones anteriores, garantizando consistencia. |
+| to_base_factor | NUMERIC(10,6) | NO | Factor de conversión a la unidad base del ingrediente. Ejemplo: si base_unit es ‘g’ y la unidad es ‘cucharada’, factor = 14.175 (1 cucharada = 14.175g de harina). El factor puede variar por ingrediente. |
+| notes | TEXT | SÍ | Nota aclaratoria opcional. Ej: ‘cucharada rasa’, ‘taza medidora estándar de 250ml’. |
+
+**Modelo de unidades de conteo e imprecisas (D-034).** KitchenBase mantiene la regla de oro de que todo ingrediente se reduce a su unidad base (g o ml). Las unidades de conteo de piezas (‘unidad’, ‘diente’) y las imprecisas (‘pizca’) NO introducen un eje nuevo: se modelan como unidades normales cuya única vía de comparación es una fila en unit_conversions que las traduce a la unidad base de cada ingrediente. La conversión es por ingrediente porque el peso de una pieza varía (1 diente de ajo ≈ 5 g; 1 unidad de huevo ≈ 50 g; 1 unidad de cebolla ≈ 150 g): no existe un factor universal de ‘unidad’ a gramos. Esto permite que un mismo ingrediente como el ajo conviva en dos familias de unidades a la vez —una receta en ‘dientes’, otra en ‘g’, y la despensa en ‘cabeza’ o en ‘g’— porque todas aterrizan en gramos y se comparan entre sí. Las unidades imprecisas (‘pizca’, y por extensión ‘al gusto’/‘c/s’) se tratan como no condicionantes del semáforo apoyándose en que sus ingredientes habituales (sal, pimienta, especias) son básicos (is_basic = TRUE en pantry_items), que el motor cuenta como siempre disponibles sin comprobar cantidad; el caso atípico de una pizca de un ingrediente caro y no básico se acepta como cálculo aproximado que no bloquea, sin marca explícita en el MVP. Límite conocido: los ingredientes de cuarentena no tienen filas en unit_conversions, así que uno usado en una unidad de conteo distinta de su unidad base seguirá reportándose como unit_conversion_unavailable (coherente con la sección 7.4). La traducción inversa de los gramos faltantes a piezas legibles (‘falta 1 huevo’ en vez de ‘faltan 50 g’) es responsabilidad de la capa de presentación, no del motor: el motor reporta siempre en unidad base. El catálogo de unidades de conteo se mantiene mínimo en el MVP (‘unidad’ como pieza natural genérica y ‘diente’); unidades adicionales (cabeza, loncha, rebanada, ramita…) pertenecen a la Ola 2 junto con el panel de administración que las gestione.
+
+Tabla: **translations**
+
+*Tabla universal de traducciones para el soporte multiidioma. Almacena la traducción de cualquier campo de texto de cualquier tabla sin necesidad de modificar el esquema de las tablas originales. El MVP soporta español (es) e inglés (en). Añadir un nuevo idioma solo requiere insertar filas nuevas en esta tabla.*
+
+| **Campo** | **Tipo** | **Nulo** | **Descripción** |
+| --- | --- | --- | --- |
+| id | UUID | NO | Clave primaria. |
+| table_name | TEXT | NO | Nombre de la tabla que contiene el registro a traducir. Ej: ‘ingredients’, ‘ingredient_categories’, ‘units’. |
+| record_id | UUID | NO | ID del registro concreto en la tabla indicada. Ej: el UUID de un ingrediente específico. |
+| field_name | TEXT | NO | Nombre del campo que se traduce. Ej: ‘name’. Junto con table_name y record_id forma una referencia única al texto original. |
+| language | TEXT | NO | Código de idioma ISO 639-1. Ej: ‘es’ para español, ‘en’ para inglés. |
+| value | TEXT | NO | Texto traducido en el idioma indicado. |
+
+Restricción UNIQUE en (table_name, record_id, field_name, language): no puede existir dos traducciones del mismo campo en el mismo idioma para el mismo registro. Las entidades traducibles en el MVP son: ingredient_categories.name, ingredients.name, units.name, recipes.title (solo para recetas públicas), y recipe_steps.instruction (solo para recetas públicas).
+
+# **3. Cuarentena de Ingredientes de Usuario**
+
+Esta tabla contiene los ingredientes creados por usuarios cuando no encuentran en el catálogo global lo que necesitan. Funcionan como una zona de cuarentena: están disponibles para el uso privado del usuario que los creó tanto en recetas como en la despensa (ver D-009 revisada y D-029), pero impiden que las recetas que los usan se hagan públicas. El administrador los revisa periódicamente. La política RLS es: SELECT restringido al usuario creador y al administrador, INSERT permitido a usuarios autenticados, UPDATE y DELETE restringidos al administrador.
+
+Tabla: **user_ingredients**
+
+*Ingredientes propuestos por usuarios, pendientes de validación. El administrador puede aprobarlos e incorporarlos al catálogo global, fusionarlos con un ingrediente existente, o rechazarlos.*
+
+| **Campo** | **Tipo** | **Nulo** | **Descripción** |
+| --- | --- | --- | --- |
+| id | UUID | NO | Clave primaria. |
+| created_by | UUID | NO | Clave foránea al usuario que creó el ingrediente (auth.users). |
+| name | TEXT | NO | Nombre propuesto por el usuario. |
+| base_unit | TEXT | NO | Unidad base propuesta: ‘g’ o ‘ml’. |
+| status | TEXT | NO | Estado de validación. Ver enum abajo. |
+| merged_into_id | UUID | SÍ | Si el administrador fusiona este ingrediente con uno existente, aquí se guarda el ID del ingrediente destino en la tabla ingredients. Permite a la app actualizar automáticamente las recetas y entradas de despensa que lo usaban. |
+| admin_notes | TEXT | SÍ | Notas del administrador durante la revisión. |
+| created_at | TIMESTAMPTZ | NO | Fecha de creación. |
+| reviewed_at | TIMESTAMPTZ | SÍ | Fecha en que el administrador revisó la solicitud. |
+
+**Enum status en user_ingredients:**** **pending · validated · rejected
+
+# **4. Recetas**
+
+Las tablas de este grupo modelan el sistema de recetas. Una receta pertenece a un usuario y puede estar en estado privado, propuesto para el catálogo o público. Sus ingredientes y pasos viven en tablas separadas vinculadas por clave foránea, lo que permite consultas eficientes y modificaciones independientes. La política RLS para recetas privadas es: acceso restringido al usuario propietario. Las recetas públicas son legibles por todos los usuarios autenticados.
+
+Tabla: **recipes**
+
+*Tabla principal de recetas. Contiene los metadatos de cada receta. Los ingredientes y los pasos de elaboración se guardan en sus propias tablas relacionadas. Los campos is_draft y draft_step soportan la persistencia de borradores durante el asistente de creación paso a paso (REC-002).*
+
+| **Campo** | **Tipo** | **Nulo** | **Descripción** |
+| --- | --- | --- | --- |
+| id | UUID | NO | Clave primaria. |
+| user_id | UUID | NO | Clave foránea al creador de la receta (auth.users). |
+| title | TEXT | NO | Nombre de la receta. Las traducciones del título de recetas públicas se guardan en la tabla translations. |
+| difficulty | TEXT | NO | Nivel de dificultad. Ver enum abajo. |
+| prep_time_minutes | INTEGER | SÍ | Tiempo total estimado de preparación en minutos. |
+| servings | INTEGER | NO | Número de raciones para las que están calculadas las cantidades. |
+| status | TEXT | NO | Estado de visibilidad. Ver enum abajo. |
+| is_draft | BOOLEAN | NO | TRUE mientras la receta esté siendo creada en el asistente paso a paso. FALSE al completarse el wizard. Default FALSE. |
+| draft_step | INTEGER | SÍ | Número del paso del wizard en el que el usuario dejó la receta borrador (1 a 5). NULL si is_draft es FALSE. |
+| has_pending_ingredients | BOOLEAN | NO | TRUE si la receta contiene al menos un ingrediente en cuarentena (user_ingredients) en estado pending. Impide que la receta pueda hacerse pública. Se recalcula automáticamente vía trigger cuando el administrador valida un ingrediente. |
+| kcal_per_serving | NUMERIC(8,2) | SÍ | Kilocalorías por ración. Calculado al guardar o modificar recipe_ingredients. |
+| protein_per_serving | NUMERIC(8,2) | SÍ | Proteínas por ración en gramos. |
+| carbs_per_serving | NUMERIC(8,2) | SÍ | Carbohidratos por ración en gramos. |
+| fat_per_serving | NUMERIC(8,2) | SÍ | Grasas por ración en gramos. |
+| fiber_per_serving | NUMERIC(8,2) | SÍ | Fibra por ración en gramos. |
+| created_at | TIMESTAMPTZ | NO | Fecha de creación. |
+| published_at | TIMESTAMPTZ | SÍ | Fecha en que el administrador la aprobó como pública. NULL si es privada o propuesta. |
+
+**Enum difficulty en recipes:**** **easy · medium · hard
+
+**Enum status en recipes:**** **private · proposed · public
+
+Tabla: **recipe_ingredients**
+
+*Ingredientes de cada receta con su cantidad, unidad y clasificación como clave o secundario. Cada fila es un ingrediente dentro de una receta. Un ingrediente puede ser del catálogo global (ingredient_id) o de cuarentena (user_ingredient_id), pero siempre uno de los dos, nunca ambos ni ninguno. Esta restricción XOR se aplica mediante CHECK.*
+
+| **Campo** | **Tipo** | **Nulo** | **Descripción** |
+| --- | --- | --- | --- |
+| id | UUID | NO | Clave primaria. |
+| recipe_id | UUID | NO | Clave foránea a recipes. |
+| ingredient_id | UUID | SÍ | Clave foránea a ingredients (catálogo global). NULL si es un ingrediente de cuarentena. |
+| user_ingredient_id | UUID | SÍ | Clave foránea a user_ingredients (cuarentena). NULL si es del catálogo global. |
+| quantity | NUMERIC(10,4) | NO | Cantidad requerida en la unidad especificada. |
+| unit_id | UUID | NO | Clave foránea a units. Unidad en que se expresa la cantidad en esta receta. Ej: cucharada, taza, gramo. |
+| is_key | BOOLEAN | NO | TRUE si este ingrediente es considerado clave para el plato. Determina si su ausencia pone la receta en naranja (falta ingrediente clave) o en amarillo (falta ingrediente secundario). Se inicializa desde ingredients.is_key_default pero el usuario puede modificarlo. |
+| notes | TEXT | SÍ | Notas opcionales sobre el ingrediente en esta receta. Ej: ‘picado fino’, ‘a temperatura ambiente’. |
+| sort_order | INTEGER | NO | Orden en que aparece el ingrediente en la lista de la receta. |
+
+Restricción CHECK XOR: (ingredient_id IS NOT NULL AND user_ingredient_id IS NULL) OR (ingredient_id IS NULL AND user_ingredient_id IS NOT NULL).
+
+Tabla: **recipe_steps**
+
+*Pasos de elaboración de cada receta. Cada fila es un paso numerado con su instrucción en texto. Los pasos de recetas públicas son traducibles mediante la tabla translations.*
+
+| **Campo** | **Tipo** | **Nulo** | **Descripción** |
+| --- | --- | --- | --- |
+| id | UUID | NO | Clave primaria. |
+| recipe_id | UUID | NO | Clave foránea a recipes. |
+| step_number | INTEGER | NO | Número de orden del paso (1, 2, 3…). |
+| instruction | TEXT | NO | Texto de la instrucción en el idioma original del creador. Sin límite de longitud. |
+
+# **5. Datos de Usuario**
+
+Las tablas de este grupo contienen datos privados de cada usuario. Están protegidas por políticas RLS que garantizan que cada usuario solo puede acceder a sus propios registros. La regla general es WHERE user_id = auth.uid() para todas las operaciones SELECT, INSERT, UPDATE y DELETE.
+
+Tabla: **pantry_items**
+
+*El inventario personal de ingredientes de cada usuario (su despensa digital). Cada fila es un ingrediente que el usuario tiene actualmente en casa, con su cantidad, ubicación y si lo considera un ingrediente básico. Desde v1.2 admite tanto ingredientes del catálogo global como ingredientes en cuarentena, con el mismo patrón XOR que recipe_ingredients.*
+
+| **Campo** | **Tipo** | **Nulo** | **Descripción** |
+| --- | --- | --- | --- |
+| id | UUID | NO | Clave primaria. |
+| user_id | UUID | NO | Clave foránea al propietario (auth.users). |
+| ingredient_id | UUID | SÍ | Clave foránea a ingredients (catálogo global). NULL si la entrada referencia a un ingrediente en cuarentena. Antes de v1.2 este campo era NOT NULL. |
+| user_ingredient_id | UUID | SÍ | Clave foránea a user_ingredients (cuarentena). NULL si la entrada referencia a un ingrediente del catálogo global. Solo se admiten user_ingredients cuyo created_by coincida con el user_id de esta fila. |
+| quantity | NUMERIC(10,4) | SÍ | Cantidad disponible en la unidad base del ingrediente referenciado (g o ml). NULL si is_basic es TRUE, ya que los básicos no controlan cantidad. |
+| unit_id | UUID | SÍ | Clave foránea a units. Unidad en que el usuario registró la cantidad. Puede ser distinta de la unidad base; el sistema convierte al comparar con recetas. |
+| location | TEXT | NO | Ubicación física. Ver enum abajo. |
+| is_basic | BOOLEAN | NO | Si TRUE, la app considera este ingrediente siempre disponible sin comprobar cantidad. Decisión personal del usuario. Por defecto FALSE. |
+| updated_at | TIMESTAMPTZ | NO | Última vez que se actualizó la cantidad. Útil para detectar registros obsoletos. |
+
+**Enum location en pantry_items:**** **fridge · pantry · freezer
+
+Restricción CHECK XOR (nuevo en v1.2): (ingredient_id IS NOT NULL AND user_ingredient_id IS NULL) OR (ingredient_id IS NULL AND user_ingredient_id IS NOT NULL). Esta restricción es idéntica a la de recipe_ingredients y garantiza que cada fila referencia a un único ingrediente, ya sea del catálogo o de cuarentena.
+
+Restricción adicional: RLS debe asegurar que cuando user_ingredient_id no es NULL, el created_by del user_ingredients referenciado coincide con el user_id de la fila de pantry_items. Un usuario no puede añadir a su despensa un ingrediente en cuarentena creado por otro usuario.
+
+*Nota de implementación (mayo 2026): en el código esta garantía no se implementa como política RLS sino como un **trigger** `BEFORE INSERT OR UPDATE` sobre `pantry_items` (`check_pantry_user_ingredient_ownership`), que lanza una excepción si el `user_ingredient_id` referenciado no pertenece al mismo `user_id`. Es funcionalmente equivalente (o más estricto). La política RLS general de `pantry_items` sigue siendo `user_id = auth.uid()`.*
+
+Tabla: **library**
+
+*La biblioteca personal de recetas guardadas por cada usuario. Puede contener recetas propias o del catálogo comunitario. El semáforo opera sobre esta tabla por defecto.*
+
+| **Campo** | **Tipo** | **Nulo** | **Descripción** |
+| --- | --- | --- | --- |
+| id | UUID | NO | Clave primaria. |
+| user_id | UUID | NO | Clave foránea al usuario propietario. |
+| recipe_id | UUID | NO | Clave foránea a la receta guardada (recipes). |
+| added_at | TIMESTAMPTZ | NO | Fecha en que el usuario añadió la receta a su biblioteca. |
+
+Restricción UNIQUE en (user_id, recipe_id): un usuario no puede guardar la misma receta dos veces.
+
+Tabla: **shopping_list_items**
+
+*Lista de la compra personal del usuario. Cada fila es un ingrediente pendiente de comprar. Cuando el usuario tacha un ítem, confirma la cantidad comprada y el sistema actualiza pantry_items automáticamente.*
+
+| **Campo** | **Tipo** | **Nulo** | **Descripción** |
+| --- | --- | --- | --- |
+| id | UUID | NO | Clave primaria. |
+| user_id | UUID | NO | Clave foránea al usuario (auth.users). |
+| ingredient_id | UUID | NO | Clave foránea a ingredients (catálogo global). |
+| needed_quantity | NUMERIC(10,4) | NO | Cantidad que el usuario necesita comprar, en la unidad base del ingrediente. |
+| is_checked | BOOLEAN | NO | TRUE cuando el usuario marca el ítem como comprado. Por defecto FALSE. |
+| bought_quantity | NUMERIC(10,4) | SÍ | Cantidad que el usuario confirmó haber comprado al tachar el ítem. Puede diferir de needed_quantity si compró más o menos de lo previsto. |
+| added_from_recipe_id | UUID | SÍ | Si el ítem fue añadido desde una receta naranja, aquí se guarda el ID de esa receta. NULL si fue añadido manualmente. |
+| added_at | TIMESTAMPTZ | NO | Fecha de creación del ítem en la lista. |
+| checked_at | TIMESTAMPTZ | SÍ | Fecha en que el usuario marcó el ítem como comprado. |
+
+Nota: shopping_list_items NO admite ingredientes en cuarentena. Comprar requiere un ingrediente reconocido del catálogo. Si un usuario quiere añadir manualmente un ingrediente en cuarentena a la lista, debe primero esperar a que se valide o añadirlo a su despensa directamente (sin pasar por la lista).
+
+Tabla: **cooking_history**
+
+*Registro histórico de cada vez que un usuario confirma haber cocinado una receta. Al confirmar, el sistema descuenta los ingredientes del inventario según las cantidades de la receta escaladas al número de raciones cocinadas.*
+
+| **Campo** | **Tipo** | **Nulo** | **Descripción** |
+| --- | --- | --- | --- |
+| id | UUID | NO | Clave primaria. |
+| user_id | UUID | NO | Clave foránea al usuario (auth.users). |
+| recipe_id | UUID | NO | Clave foránea a la receta cocinada (recipes). |
+| servings_made | INTEGER | NO | Número de raciones cocinadas. Puede diferir del servings de la receta. Se usa para escalar el descuento de ingredientes proporcionalmente. |
+| cooked_at | TIMESTAMPTZ | NO | Fecha y hora en que se registró el cocinado. |
+| notes | TEXT | SÍ | Notas libres del usuario sobre esa preparación. Ej: ‘usé pechuga en vez de contramuslo’. |
+
+# **6. Mapa de Relaciones**
+
+Esta tabla resume todas las relaciones entre tablas. La notación 1:N significa que un registro de la tabla origen puede tener muchos en la tabla destino. N:M significa muchos a muchos, implementado mediante una tabla intermedia con datos adicionales.
+
+| **Tabla origen** | **Tabla destino** | **Tipo** | **Descripción** |
+| --- | --- | --- | --- |
+| ingredient_categories | ingredients | **1:N** | Una categoría agrupa muchos ingredientes del catálogo. |
+| units | unit_conversions | **1:N** | Una unidad del catálogo puede tener factores de conversión para muchos ingredientes distintos. |
+| units | recipe_ingredients | **1:N** | Una unidad puede usarse en muchos ingredientes de receta. |
+| units | pantry_items | **1:N** | Una unidad puede usarse para registrar la cantidad de muchos ítems de despensa. |
+| ingredients | unit_conversions | **1:N** | Un ingrediente tiene múltiples factores de conversión, uno por cada unidad alternativa reconocida. |
+| ingredients | recipe_ingredients | **1:N** | Un ingrediente del catálogo puede aparecer en muchas recetas. |
+| ingredients | pantry_items | **N:M** | Un ingrediente del catálogo puede estar en la despensa de muchos usuarios. pantry_items es la tabla intermedia con datos personalizados. |
+| ingredients | shopping_list_items | **N:M** | Un ingrediente puede estar en la lista de la compra de muchos usuarios. |
+| user_ingredients | recipe_ingredients | **1:N** | Un ingrediente de cuarentena puede aparecer en varias recetas privadas del mismo usuario. |
+| user_ingredients | pantry_items | **1:N** | Nuevo en v1.2. Un ingrediente de cuarentena puede aparecer en la despensa del usuario que lo creó. |
+| auth.users | recipes | **1:N** | Un usuario puede crear muchas recetas. |
+| auth.users | user_ingredients | **1:N** | Un usuario puede crear muchos ingredientes pendientes de validación. |
+| auth.users | pantry_items | **1:N** | Un usuario tiene muchos ingredientes en su despensa. |
+| auth.users | library | **1:N** | Un usuario puede guardar muchas recetas en su biblioteca. |
+| auth.users | shopping_list_items | **1:N** | Un usuario tiene muchos ítems en su lista de la compra. |
+| auth.users | cooking_history | **1:N** | Un usuario tiene un historial de muchas sesiones de cocinado. |
+| recipes | recipe_ingredients | **1:N** | Una receta tiene muchos ingredientes. |
+| recipes | recipe_steps | **1:N** | Una receta tiene muchos pasos de elaboración. |
+| recipes | library | **N:M** | Muchos usuarios pueden guardar la misma receta en su biblioteca. |
+| translations | varias | **N:M** | Traducciones de campos de texto de ingredient_categories, ingredients, units, recipes y recipe_steps. |
+
+# **7. Lógica del Semáforo**
+
+El semáforo es la operación más compleja del sistema porque requiere cruzar datos de varias tablas en tiempo real. Esta sección describe el algoritmo en lenguaje natural para que Claude Code pueda implementarlo como una función de base de datos (PostgreSQL function) o como lógica en el servidor.
+
+## **7.1 Algoritmo de clasificación**
+
+Para cada receta de la biblioteca del usuario, el sistema recorre su lista de ingredientes en recipe_ingredients y para cada uno aplica el siguiente proceso de verificación en orden.
+
+- Primero comprueba si existe una entrada en pantry_items del usuario que referencie al mismo ingrediente (sea por ingredient_id o por user_ingredient_id) y si está marcada como is_basic. Si es así, cuenta como disponible independientemente de la cantidad. Se pasa al siguiente ingrediente.
+
+- Si no es básico, busca en pantry_items del usuario una entrada que referencie al mismo ingrediente. La comparación es directa cuando ambos lados (la receta y la despensa) usan el mismo tipo de referencia: si la receta tiene ingredient_id, busca en pantry_items donde ingredient_id coincida; si la receta tiene user_ingredient_id, busca donde user_ingredient_id coincida. Si no existe ningún registro coincidente, el ingrediente cuenta como no disponible. Se registra si era is_key o no.
+
+- Si existe en pantry_items, el sistema convierte la cantidad requerida por la receta a la unidad base del ingrediente usando unit_conversions. Compara el resultado con la cantidad disponible en pantry_items (también convertida a la unidad base si es necesario). Si la cantidad disponible es igual o mayor, el ingrediente cuenta como disponible.
+
+- Una vez verificados todos los ingredientes, si todos están disponibles la receta es Verde. Si hay ingredientes no disponibles pero ninguno tiene is_key = TRUE, la receta es Amarilla (solo faltan secundarios). Si hay al menos un ingrediente no disponible con is_key = TRUE, la receta es Naranja.
+
+## **7.2 Tratamiento de ingredientes en cuarentena**
+
+Nuevo en v1.2. Los ingredientes en cuarentena (referenciados por user_ingredient_id) participan en el cálculo del semáforo con las siguientes particularidades:
+
+- Cuentan como disponibles para el cálculo de color, igual que cualquier ingrediente del catálogo. Una receta con todos sus ingredientes presentes en la despensa es verde, aunque algunos de esos ingredientes sean de cuarentena.
+
+- Sin embargo, la receta hereda has_pending_ingredients = TRUE como señal de que parte del cómputo se apoya en datos no validados (los valores nutricionales, las conversiones de unidad y el flag is_key de los ingredientes en cuarentena no están auditados por el admin).
+
+- Visualmente, una receta verde con has_pending_ingredients = TRUE puede mostrarse con un indicador sutil (‘cálculo aproximado’), pero esto es una decisión de UX, no de modelo de datos.
+
+- Cuando el admin valida y fusiona un user_ingredient con un ingredient del catálogo (rellena merged_into_id), las filas de pantry_items y recipe_ingredients que lo referenciaban se actualizan automáticamente vía trigger. A partir de ese momento, el cálculo del semáforo deja de necesitar el ingrediente en cuarentena: pasa a referenciar directamente el ingrediente del catálogo.
+
+## **7.3 Definición de ingrediente clave**
+
+Un ingrediente es clave (is_key = TRUE) cuando su ausencia hace que el plato pierda su identidad o resulte imposible de preparar. Son clave por defecto las proteínas principales (pollo, carne, pescado, huevos como protagonistas), los carbohidratos estructurales (pasta, arroz, pan, patatas como base del plato), los lácteos determinantes (nata en una salsa de nata, queso en una quiche), y las verduras protagonistas del plato (berenjena en una musaka). No son clave por defecto los condimentos (sal, pimienta, mostaza), las especias y hierbas aromáticas (orégano, tomillo, perejil decorativo), ni los ingredientes de acabado opcional (ralladura de limón, cebollino picado). El campo is_key_default en la tabla ingredients establece este valor por defecto, pero el usuario puede sobrescribirlo en cada receta individualmente. Para ingredientes en cuarentena, el is_key de recipe_ingredients lo decide el usuario directamente al añadirlo, ya que no hay valor por defecto del catálogo.
+
+## **7.4 Implementación del motor (migración 006)**
+
+Nuevo en v1.3. El algoritmo descrito en 7.1 y 7.2 está implementado como cuatro funciones PostgreSQL en la migración 006_semaphore_engine.sql. Todas son STABLE (no modifican datos, solo leen) y SECURITY INVOKER (se ejecutan con los privilegios del usuario que llama, de modo que las políticas RLS de pantry_items, recipes y demás se aplican automáticamente). El motor no muta has_pending_ingredients ni ningún otro campo: solo informa del estado actual. La recomputación de has_pending_ingredients es una tarea separada (ver deuda técnica DT-001).
+
+Las dos funciones auxiliares son:
+
+- kb_convert_to_base(ingredient_id, quantity, unit_id) devuelve numeric. Convierte una cantidad expresada en cualquier unidad a la unidad base del ingrediente del catálogo, usando unit_conversions. Devuelve NULL si no existe ruta de conversión. Para decidir si la unidad recibida ya es la unidad base del ingrediente, el motor resuelve la unidad base de forma canónica combinando is_base = TRUE con la dimensión (units.dimension) que corresponde al base_unit del ingrediente (‘mass’ para ‘g’, ‘volume’ para ‘ml’), y compara por unit_id; nunca por el texto del símbolo. Si la unidad recibida es esa unidad base, devuelve la cantidad sin cambios. Esta es la regla fijada en D-032 y completada en D-033: la comprobación no se hace por coincidencia textual de units.symbol contra ingredients.base_unit (symbol es texto libre y opcional, y cualquier variante ortográfica lo rompería) ni depende ya únicamente de is_base (que por sí solo no distingue masa de volumen al haber dos filas base). La función auxiliar kb_base_unit_id resuelve la fila base correcta usando is_base + dimension.
+
+- kb_find_pantry_match(user_id, ingredient_id, user_ingredient_id) devuelve la fila de pantry_items que coincide con el ingrediente de receta (sea del catálogo o de cuarentena) para ese usuario, o vacío si no hay coincidencia. La coincidencia es like-with-like: un ingrediente de catálogo solo casa con ingredient_id en la despensa; uno de cuarentena solo casa con el mismo user_ingredient_id.
+
+Las dos funciones principales son:
+
+- compute_recipe_status(recipe_id, user_id) devuelve una fila con status (green | yellow | orange) y missing_ingredients (jsonb). Recorre los ingredientes de la receta: si el ingrediente está en la despensa marcado como básico, cuenta como disponible sin comprobar cantidad; si no está en la despensa, cuenta como faltante; si está pero no es básico, convierte ambas cantidades a la unidad base y compara. El color final es verde si no falta nada, naranja si falta al menos un ingrediente clave, amarillo si solo faltan secundarios.
+
+- compute_library_status(user_id) devuelve una fila por cada receta de la biblioteca del usuario (excluyendo borradores), cada una con recipe_id, recipe_title, status y missing_ingredients. Es la función que consumen la Biblioteca y la pantalla de Inicio. Internamente llama a compute_recipe_status para cada receta.
+
+El campo missing_ingredients es un array JSON donde cada elemento faltante lleva: ingredient_id, user_ingredient_id, name, is_key, is_pending (TRUE si el ingrediente es de cuarentena), base_unit, missing_quantity y reason. El campo reason toma uno de tres valores: not_in_pantry (no está en la despensa), insufficient_quantity (está pero no en cantidad suficiente; missing_quantity indica cuánto falta en unidad base) o unit_conversion_unavailable (no se pudo convertir la unidad; ocurre sobre todo con ingredientes de cuarentena, que no tienen factores en unit_conversions, cuando la unidad de la receta no coincide con su unidad base).
+
+Tratamiento de cuarentena en el motor: como los ingredientes de cuarentena no tienen entradas en unit_conversions, la única comparación posible es cuando la unidad de la receta coincide directamente con la unidad base del ingrediente de cuarentena. Esa coincidencia con la unidad base se resuelve también por la unidad base canónica (is_base + dimension), de forma coherente con D-032 y D-033, y no por comparación de texto del símbolo. Si no coinciden, el ingrediente se reporta como faltante con reason = unit_conversion_unavailable. El flag is_pending en el JSON permite a las pantallas mostrar un indicador de ’cálculo aproximado’ sin que ello cambie el color de la receta.
+
+Verificación: la migración 006 se validó con doce pruebas que cubren recetas verdes/amarillas/naranjas, ingredientes básicos ignorados, conversión de unidades correcta, cantidad insuficiente, los cuatro escenarios de cuarentena, el cálculo masivo de biblioteca, la biblioteca vacía y la llamada directa a una receta fuera de la biblioteca. Las doce pasaron.
+
+Historial posterior del motor (nuevo en v1.7). La migración 006 fue el punto de partida, pero el motor evolucionó en migraciones sucesivas hasta quedar congelado tras la etapa E1.1. La secuencia real aplicada sobre la base viva es: 007 (trigger de detección de duplicados al crear ingredientes de cuarentena, D-031); 008 (el motor identifica la unidad base por units.is_base y no por el texto del símbolo, D-032); 009 (se añaden units.dimension e ingredients.default_unit_id, y kb_base_unit_id pasa a resolver la fila base combinando is_base con la dimensión, D-033 — este es el punto en que el motor se considera congelado, etapa E1.1); y 010 (alta de la unidad ‘diente’ y siembra de la conversión ajo→gramos, D-034, que solo añade datos y no toca ninguna función del motor). A partir de la 009, las cinco funciones del motor (kb_base_unit_id, kb_convert_to_base, kb_find_pantry_match, compute_recipe_status, compute_library_status) no se modifican salvo decisión explícita registrada. El fichero schema.sql del repositorio se sincronizó como snapshot fiel de este estado vivo en la etapa E2 (D-035); la consolidación de estas migraciones en una secuencia numerada y reaplicable sobre una base vacía queda pendiente como trabajo futuro (ver OE-004 y la pieza 2 de E2).
+
+# **8. Notas para la Implementación con Claude Code**
+
+Las siguientes notas están dirigidas a Claude Code durante el desarrollo con Supabase y React Native + Expo. Deben leerse antes de implementar cualquier tabla o función.
+
+- La tabla auth.users es gestionada automáticamente por Supabase Auth. No hay que crearla. Todas las claves foráneas a usuarios referencian auth.users(id).
+
+- El cálculo nutricional de las recetas (campos kcal_per_serving y similares en recipes) debe implementarse como un trigger PostgreSQL que se ejecute automáticamente cada vez que se inserta, actualiza o elimina una fila en recipe_ingredients para esa receta. Los ingredientes en cuarentena se excluyen del cálculo (sus valores nutricionales no están validados).
+
+- El campo has_pending_ingredients en recipes debe recalcularse automáticamente mediante un trigger en user_ingredients que se active cuando el administrador cambia el campo status de pending a validated o rejected. También debe activarse al insertar/eliminar filas en recipe_ingredients que apunten a user_ingredients en estado pending.
+
+- Cuando un ingrediente de cuarentena se fusiona con uno existente (merged_into_id se rellena), el sistema debe actualizar automáticamente tanto las filas de recipe_ingredients como las de pantry_items (nuevo en v1.2) que referenciaban el user_ingredient_id, reemplazándolas por el ingredient_id del ingrediente destino. La restricción XOR debe seguir satisfaciéndose en ambas tablas tras la fusión.
+
+- El sistema de conversión de unidades en el semáforo requiere que tanto la cantidad en pantry_items como la cantidad en recipe_ingredients se conviertan a la unidad base antes de comparar. Cuando el ingrediente es del catálogo, la conversión usa unit_conversions con el ingredient_id correspondiente. Cuando es de cuarentena, el usuario habrá especificado la unidad al crearlo y solo se admiten conversiones triviales (unidad base = unidad usada) en el MVP. Las conversiones avanzadas para ingredientes de cuarentena requieren validación del admin.
+
+- La tabla translations usa una combinación de (table_name, record_id, field_name, language) como clave única. Al consultar un texto en la interfaz, la app primero busca la traducción en el idioma del usuario; si no existe, cae al español como idioma base.
+
+- PostHog debe inicializarse al arrancar la app (antes del primer render) y registrar eventos de forma asíncrona sin bloquear la UI. No debe enviarse ningún dato personal identificable: solo UUIDs anónimos de sesión.
+
+- Los valores NUMERIC usan la precisión indicada en cada tabla: NUMERIC(10,4) para cantidades de ingredientes y NUMERIC(8,2) para valores nutricionales.
+
+- Nuevo en v1.2: Las políticas RLS de pantry_items deben validar que, cuando user_ingredient_id no es NULL, el created_by del user_ingredients referenciado coincide con auth.uid(). Un usuario no puede añadir a su despensa un ingrediente en cuarentena creado por otro usuario. (Nota mayo 2026: implementado como trigger `check_pantry_user_ingredient_ownership`, no como política RLS; ver sección 5.)
+
+# **9. Decisiones Pendientes de este Documento**
+
+Las siguientes decisiones de diseño afectan al modelo de datos pero están pendientes de confirmación antes de implementar.
+
+- Sistema de notificaciones: si se implementan notificaciones push (por ejemplo, cuando el administrador valida un ingrediente pendiente), será necesaria una tabla notifications o usar un servicio externo como Expo Notifications. Esto requiere decidir el proveedor y si los datos de notificación viven en Supabase o fuera.
+
+- Panel de administración: el flujo exacto de trabajo del administrador puede requerir tablas adicionales de auditoría o log (quién aprobó qué y cuándo), especialmente para cumplir los requisitos de moderación de contenido de Apple App Store.
+
+- Versionado de recetas públicas (D-028): cuando se implemente, requerirá decidir entre añadir una tabla recipe_revisions con histórico, añadir un campo parent_recipe_id en recipes con filas hijas que representen propuestas, o un esquema híbrido. Esta decisión se tomará al inicio de la Ola 2.
+
+- Índices de rendimiento: cuando el catálogo de ingredientes y el número de usuarios crezca, será necesario añadir índices específicos en las columnas de búsqueda más frecuentes (ingredient.name, translations.record_id + language, pantry_items.user_id). Esto no afecta al esquema pero sí al rendimiento en producción.
+
+*Documento vivo. Actualizar cada vez que se modifique el esquema de la base de datos.*
+
+*KitchenBase · Modelo de Datos v1.7 · Pág. 1*
