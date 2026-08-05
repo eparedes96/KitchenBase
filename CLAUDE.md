@@ -55,5 +55,5 @@ Requiere variables en `frontend/.env`: `REACT_APP_SUPABASE_URL`, `REACT_APP_SUPA
   `C:\Users\Enrique Paredes\OneDrive\Proyectos\KitchenBase\Documentación\`
   PRD (Doc 1), Modelo de Datos (Doc 2), Mapa de Pantallas (Doc 3), Registro de Decisiones (Doc 4), **Guía de Estilo (Doc 5)** y `kitchenbase_deuda_tecnica_v4.md`. Son la **intención de diseño**. (Los `.docx` son texto/Markdown, legibles directamente.)
 - **Convenciones**: `docs/STYLEGUIDE.md` (código, en el repo) · Doc 5 Guía de Estilo (visual/UX, en Documentación).
-- **`plan.md`** (raíz): bitácora de implementación por fases.
+- **`plan.md`** (raíz): plan activo — objetivos, estado actual, próximos pasos. **`CHANGELOG.md`** (raíz): historial detallado de fases ya completadas.
 - El **repo** es la verdad del código; los documentos, la intención.
