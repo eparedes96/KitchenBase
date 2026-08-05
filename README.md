@@ -10,7 +10,7 @@ Conecta el inventario, el recetario y la lista de la compra para responder a
 > Los 5 flujos críticos del MVP están completos y el bucle cierra de punta a punta.
 
 ## Stack
-- **Frontend**: React 19 + React Router 7, Tailwind CSS + shadcn/ui (Radix), build con CRA + craco.
+- **Frontend**: React 19 + React Router 7, Tailwind CSS (componentes propios), build con CRA + craco.
 - **Backend de datos**: Supabase (PostgreSQL + Auth + RLS + Realtime). El frontend habla directamente con Supabase; no hay servidor propio en el bucle.
 - **Analytics**: PostHog (vía wrapper, sin datos personales).
 

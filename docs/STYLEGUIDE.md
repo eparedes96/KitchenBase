@@ -28,8 +28,7 @@
 
 ## Estructura de carpetas (`frontend/src/`)
 - `screens/` — una pantalla por ruta. Subcarpeta `auth/` para login/registro.
-- `components/<dominio>/` — UI por dominio: `pantry/`, `recipes/wizard/`, `library/`, `shopping/`, `cooking/`, `layout/`, `common/`.
-- `components/ui/` — primitivos shadcn (generados; **no editar a mano**, ignorados por Prettier).
+- `components/<dominio>/` — UI por dominio: `pantry/`, `recipes/wizard/`, `library/`, `shopping/`, `cooking/`, `layout/`, `common/`. Todo hecho a mano con Tailwind (no se usa shadcn/ui; el scaffold que traía el proyecto nunca se llegó a usar y se eliminó).
 - `context/` — React Context (p. ej. `AuthContext`). `lib/` — utilidades sin UI (cliente Supabase, analytics, conversiones). `sql/` — esquema y migraciones.
 - Imports con alias **`@/`** (`import { supabase } from "@/lib/supabaseClient"`).
 

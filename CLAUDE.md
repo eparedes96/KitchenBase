@@ -28,10 +28,9 @@ Resuelve "¿qué cocino hoy con lo que tengo?" conectando inventario, recetario 
 - **Código vs documentación**: si discrepan, **lo señalo y el usuario decide** caso por caso cuál prevalece (no asumo que gane uno u otro).
 
 ## Arquitectura
-- **Frontend** (`frontend/`): React 19 + react-router 7, Tailwind + shadcn/ui (Radix), lucide-react. Build con CRA + craco. Habla **directamente con Supabase** desde el cliente (`src/lib/supabaseClient.js`); no hay backend propio en el bucle.
+- **Frontend** (`frontend/`): React 19 + react-router 7, Tailwind (componentes propios hechos a mano, sin shadcn/ui) + lucide-react. Build con CRA + craco. Habla **directamente con Supabase** desde el cliente (`src/lib/supabaseClient.js`); no hay backend propio en el bucle.
 - **Supabase** (proyecto `ldrxurbtrbjhxmrpdtjr`): PostgreSQL + Auth + RLS + Realtime. **13 tablas**. El motor del semáforo son funciones PL/pgSQL. `frontend/src/sql/schema.sql` es el **snapshot vivo** (migraciones 001-010).
-- **`backend/`**: boilerplate FastAPI + MongoDB de Emergent (Hello World). **Vestigial: no se usa.** No construir sobre él.
-- **`@emergentbase/visual-edits`** (devDependency) es un artefacto de Emergent; no depender de él.
+- **`backend/`**: boilerplate FastAPI + MongoDB de Emergent (Hello World). **Vestigial: no se usa.** No construir sobre él (DT-007, decisión: conservarlo documentado como inerte, no borrarlo).
 - Analytics: PostHog vía wrapper `src/lib/analytics.js` (sin PII, no-op si no hay `window.posthog`).
 - **i18n pendiente**: la PRD prevé i18next (es/en) pero **no está instalado**; la UI está en español hardcodeado y la tabla `translations` está vacía.
 
