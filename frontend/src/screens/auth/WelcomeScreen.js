@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { ChefHat } from "lucide-react";
 import { MobileFrame } from "@/components/common/MobileFrame";
 
 export default function WelcomeScreen() {
@@ -10,11 +9,14 @@ export default function WelcomeScreen() {
         className="flex flex-1 flex-col px-6 py-10"
       >
         <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-light text-brand">
-            <ChefHat className="h-7 w-7" strokeWidth={1.75} />
-          </div>
-          <div className="flex flex-col gap-3">
-            <h1 className="font-serif text-display-lg text-ink">KitchenBase</h1>
+          <div className="flex flex-col gap-5">
+            <h1 className="m-0">
+              <img
+                src={`${process.env.PUBLIC_URL}/brand/lockup-vertical.svg`}
+                alt="KitchenBase"
+                className="mx-auto h-auto w-[240px]"
+              />
+            </h1>
             <p className="max-w-[300px] text-body text-ink-secondary">
               Tu despensa, tus recetas y tu lista de la compra,
               <br />
