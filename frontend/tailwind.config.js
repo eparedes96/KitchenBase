@@ -10,6 +10,8 @@ module.exports = {
         brand: {
           DEFAULT: "#C2714F", // terracotta — primary actions, active states
           light: "#FDF3EF", // selected/active backgrounds
+          hover: "#B0603F", // primary button hover (D-036)
+          pressed: "#9A4F32", // primary button pressed (D-036)
         },
         // Surfaces
         surface: {

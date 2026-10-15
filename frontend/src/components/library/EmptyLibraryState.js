@@ -26,7 +26,7 @@ export function EmptyLibraryState() {
           type="button"
           onClick={() => navigate("/my-recipes/new")}
           data-testid="library-empty-create-cta"
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-[#B86848]"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed"
         >
           Añade tu primera receta
         </button>

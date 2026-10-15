@@ -29,7 +29,7 @@ export function WizardFooter({
           onClick={onNext}
           disabled={nextDisabled || busy}
           data-testid={nextTestId}
-          className="flex h-11 flex-[2] items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-[#B86848] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-11 flex-[2] items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? "Guardando…" : nextLabel}
         </button>

@@ -424,7 +424,7 @@ function RecipeActions({
           onClick={handleAddMissingToList}
           disabled={submitting}
           data-testid="library-recipe-shopping-cta"
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-[#B86848] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed disabled:cursor-not-allowed disabled:opacity-60"
         >
           <ShoppingCart className="h-4 w-4" />
           {submitting
@@ -468,7 +468,7 @@ function RecipeActions({
             type="button"
             onClick={() => navigate("/shopping-list")}
             data-testid="library-recipe-go-to-list"
-            className="flex h-8 items-center justify-center rounded-md bg-brand px-3 text-caption font-semibold text-white transition-colors hover:bg-[#B86848]"
+            className="flex h-8 items-center justify-center rounded-md bg-brand px-3 text-caption font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed"
           >
             Ver lista
           </button>
@@ -677,7 +677,7 @@ export default function LibraryRecipeDetailScreen() {
         <Link
           to="/library"
           data-testid="library-recipe-not-found-back"
-          className="mt-2 flex h-11 items-center justify-center rounded-md bg-brand px-5 text-body font-semibold text-white transition-colors hover:bg-[#B86848]"
+          className="mt-2 flex h-11 items-center justify-center rounded-md bg-brand px-5 text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed"
         >
           Volver a la Biblioteca
         </Link>
