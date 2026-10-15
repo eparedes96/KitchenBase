@@ -82,7 +82,7 @@ Patrones que el prototipo ya usa y que deben mantenerse consistentes:
 
 # 9. Identidad de marca
 
-Decisión D-037. Los archivos están en `brand/logo/` de la carpeta compartida del proyecto.
+Decisión D-037. Los archivos están en `frontend/public/brand/`.
 
 - **Símbolo:** gorro de chef alto en terracota, con una K invertida y una B compartiendo el tallo, recortadas como espacio negativo. Por debajo de **32 px** se usa la versión pequeña (cortes más gruesos).
 - **Nombre:** «KitchenBase» en **Playfair Display Bold**, con la K y la B en terracota (`#C2714F`) y el resto en `#1F2937`. El punto de la i es una bolita terracota.
