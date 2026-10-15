@@ -22,7 +22,7 @@ export function EmptyPantryState({ onAdd }) {
         type="button"
         onClick={onAdd}
         data-testid="pantry-empty-add-first"
-        className="mt-2 flex h-11 items-center justify-center gap-2 rounded-md bg-brand px-5 text-body font-semibold text-white transition-colors hover:bg-[#B86848]"
+        className="mt-2 flex h-11 items-center justify-center gap-2 rounded-md bg-brand px-5 text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed"
       >
         Añadir mi primer ingrediente
       </button>

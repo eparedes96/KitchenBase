@@ -521,7 +521,7 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
               onClick={handleSave}
               disabled={!canSave || submitting}
               data-testid="add-pantry-save"
-              className="flex h-11 flex-1 items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-[#B86848] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 flex-1 items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? "Guardando…" : "Guardar"}
             </button>
@@ -541,7 +541,7 @@ export function AddPantryItemModal({ open, onClose, onSaved }) {
               onClick={handleCreateSubmit}
               disabled={submitting}
               data-testid="add-pantry-create-submit"
-              className="flex h-11 flex-1 items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-[#B86848] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 flex-1 items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? "Proponiendo…" : "Crear y continuar"}
             </button>

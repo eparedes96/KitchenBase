@@ -4,9 +4,11 @@
 
 Product Requirements Document (PRD)
 
-Versión 1.3  ·  Mayo 2026
+Versión 1.4  ·  Octubre 2026
 
 *Estado: Borrador de trabajo*
+
+*Nota de revisión v1.4 (octubre 2026): en la sección 8 se añaden los tokens de hover y pulsado del terracota (D-036) y una referencia a la identidad de marca (D-037). Sin cambios en producto, navegación, semáforo ni modelo de datos.*
 
 *Nota de revisión v1.3 (mayo 2026): se actualizan las referencias operativas de herramienta de prototipado de Lovable a Emergent, que es la herramienta realmente en uso (la decisión histórica D-002 se conserva sin cambios en el Registro de Decisiones). Sin cambios en producto, navegación, semáforo, i18n, analytics ni diseño respecto a v1.2.*
 
@@ -172,6 +174,7 @@ KitchenBase adopta un tono limpio y funcional: minimalista, con espacios generos
 | **Token** | Valor y uso |
 | --- | --- |
 | **Color de marca** | #C2714F (terracota) — botones de acción primaria, iconos activos de navegación, acentos de interfaz, barra de estado superior |
+| **Hover y pulsado de marca** | #B0603F (hover) y #9A4F32 (pulsado) — botones primarios; ver D-036 |
 | **Color de fondo principal** | #FFFFFF (blanco) — fondo de tarjetas y superficies principales |
 | **Color de fondo secundario** | #F5F5F4 (gris muy claro) — fondo de pantalla, separadores de sección |
 | **Color de texto principal** | #1F2937 (casi negro) — títulos, nombres, datos primarios |
@@ -188,7 +191,11 @@ KitchenBase adopta un tono limpio y funcional: minimalista, con espacios generos
 
 Los tres colores del semáforo son colores funcionales, no decorativos. Verde significa que el plato se puede cocinar ahora. Amarillo significa que solo faltan ingredientes secundarios. Naranja significa que falta al menos un ingrediente clave. Estos colores no deben usarse para ningún otro propósito en la interfaz, para evitar confusión semántica.
 
-8.4 Referencia para Prompts de Emergent
+8.4 Identidad de Marca
+
+El símbolo es un gorro de chef alto con una K invertida y una B compartiendo el tallo, el nombre se escribe en Playfair Display Bold y el icono de la app es el gorro blanco sobre terracota. Los detalles, las reglas de uso y las medidas de los iconos están en la Guía de Estilo (Doc 5, sección 9) y en la decisión D-037.
+
+8.5 Referencia para Prompts de Emergent
 
 Todo prompt para Emergent debe incluir los siguientes parámetros de diseño de forma explícita: estilo minimalista y funcional, color primario terracota #C2714F, fondo blanco con grises muy claros para separar secciones, tipografía Playfair Display para nombres de recetas y títulos, Inter para el resto, y sin sombras ni gradientes. Los colores del semáforo son verde #22C55E, amarillo #EAB308 y naranja #F97316.
 

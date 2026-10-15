@@ -476,7 +476,7 @@ export default function RecipeDetailScreen() {
         <Link
           to="/my-recipes"
           data-testid="recipe-not-found-back"
-          className="mt-2 flex h-11 items-center justify-center rounded-md bg-brand px-5 text-body font-semibold text-white transition-colors hover:bg-[#B86848]"
+          className="mt-2 flex h-11 items-center justify-center rounded-md bg-brand px-5 text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed"
         >
           Volver a Mis Recetas
         </Link>
@@ -597,7 +597,7 @@ export default function RecipeDetailScreen() {
           className={`flex h-11 w-full items-center justify-center gap-2 rounded-md text-body font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
             inLibrary
               ? "border border-line bg-surface text-ink hover:bg-brand-light hover:text-brand"
-              : "bg-brand text-white hover:bg-[#B86848]"
+              : "bg-brand text-white hover:bg-brand-hover active:bg-brand-pressed"
           }`}
         >
           {inLibrary ? (

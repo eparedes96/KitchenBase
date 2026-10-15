@@ -261,7 +261,7 @@ export default function ShoppingListScreen() {
           type="button"
           onClick={() => fetchItems()}
           data-testid="shopping-list-retry"
-          className="mt-2 flex h-11 items-center justify-center gap-2 rounded-md bg-brand px-5 text-body font-semibold text-white transition-colors hover:bg-[#B86848]"
+          className="mt-2 flex h-11 items-center justify-center gap-2 rounded-md bg-brand px-5 text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed"
         >
           <RefreshCw className="h-4 w-4" />
           Reintentar
@@ -413,7 +413,7 @@ function FloatingAddButton({ onClick }) {
       onClick={onClick}
       data-testid="shopping-list-add-fab"
       aria-label="Añadir ítem"
-      className="fixed bottom-24 right-5 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-white transition-colors hover:bg-[#B86848]"
+      className="fixed bottom-24 right-5 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed"
     >
       <Plus className="h-6 w-6" strokeWidth={2.25} />
     </button>

@@ -4,9 +4,11 @@
 
 Registro de Decisiones — Documento 4
 
-Versión 1.8 · Mayo 2026
+Versión 1.9 · Octubre 2026
 
 *Documento vivo — añadir una entrada por cada decisión relevante*
+
+*Nota de revisión v1.9 (octubre 2026): se añade la sección 12, Decisiones de Identidad de Marca, con las decisiones D-036 (colores de hover y pulsado del terracota) y D-037 (símbolo, nombre estilizado e iconos). El resto del documento (D-001 a D-035) permanece idéntico a v1.8.*
 
 *Nota de revisión v1.8 (mayo 2026): se añade la decisión D-035, que documenta la etapa E2 de higiene del repositorio —sincronizar el fichero schema.sql como snapshot fiel del estado vivo de la base de datos tras las migraciones 001-010— y la lección operativa que la acompaña: una tarea no está hecha cuando el código está escrito en el contenedor de Emergent, sino cuando está publicado en el repositorio de GitHub que sobrevive al contenedor. El resto del documento (D-001 a D-034) permanece idéntico a v1.7.*
 
@@ -369,6 +371,28 @@ Esta sección agrupa decisiones tomadas durante la etapa E2 de perfeccionamiento
 | **Razonamiento** | El fichero schema.sql es la única representación del esquema que viaja con el código. Si miente sobre el estado real, engaña a quien lo lea —incluido un futuro Claude Code en la fase React Native, u otra instancia del agente—. Sincronizarlo como snapshot es el arreglo más barato que restaura su valor como referencia, sin asumir todavía el trabajo mayor de reconstruir el historial completo de migraciones. Se eligió descubrir el estado real de la base a ciegas (dejando que Emergent leyera el catálogo de PostgreSQL sin un checklist previo) para evitar que el agente se autoconvenciera de un estado sugerido en vez del real. |
 | **Implicaciones** | (1) Repositorio: schema.sql pasa de ~390 líneas (fundacional, 13 tablas sin reformas) a ~999 líneas (snapshot vivo con las 10 migraciones fusionadas). (2) Proceso: el cierre formal de E2 exige que el snapshot esté no solo escrito en el contenedor sino publicado en el GitHub que el usuario ve; ver la lección OE-005 en el documento de Deuda Técnica. (3) Quedan abiertas como trabajo futuro la pieza 2 (consolidar migraciones 001-010 en una secuencia numerada continua y reaplicable, que materializa OE-004) y la pieza 3 (auditar cobertura RLS y limpiar el seed de pruebas P4.1). (4) No cambia el esquema vivo ni el motor del semáforo, congelado tras E1.1: es una operación de fidelidad documental sobre el repositorio, no un cambio de datos. |
 
+# **12. Decisiones de Identidad de Marca**
+
+Esta sección agrupa las decisiones sobre la identidad visual de KitchenBase (logo, nombre estilizado, iconos y estados de color) tomadas en octubre de 2026, al preparar el kit de marca.
+
+**D-036 — Estados de hover y pulsado del terracota en botones primarios**
+
+| **✓ DECIDIDO** | **Fecha:**** **Octubre 2026 |
+| --- | --- |
+| **Decisión** | Los botones primarios rellenos (botón de acción, FAB "+", pestañas o pills activas) usan tres tonos de terracota: normal #C2714F (sin cambios, D-024), hover #B0603F y pulsado #9A4F32. El texto va en blanco en los tres estados. El botón normal se deja en #C2714F aunque el blanco sobre él da 3,6:1: el texto de los botones primarios debe ser en negrita (Inter 600) y de al menos 14 px (o 18 px sin negrita), el umbral de texto grande de WCAG, que pide 3:1. En móvil no existe hover: el estado relevante es el pulsado (`pressed` en Pressable). Los botones secundarios, fantasma y los fondos seleccionados siguen usando #FDF3EF (brand-light) en hover, como indica D-024. |
+| **Alternativas** | Oscurecer también el botón normal a #B0603F para que cumpla 4,5:1 con texto de cualquier tamaño (descartada: cambia el color de marca decidido en D-024 en todos los botones). Aclarar el color en hover (descartada: baja aún más el contraste del texto blanco). Cambiar la opacidad en hover (descartada: mezcla el terracota con el fondo y el contraste varía según la pantalla). Un solo tono de hover sin estado pulsado (descartada: en móvil el pulsado es el único feedback visible). |
+| **Razonamiento** | Los dos tonos nuevos son más oscuros que el normal, de modo que cada paso se nota sin parecer otro color y el contraste del texto blanco mejora al interactuar: 3,6:1 normal, 4,6:1 hover y 5,9:1 pulsado. Mantener la marca intacta en reposo y oscurecer solo en interacción evita tocar D-024. La regla de texto en negrita de 14 px hace legítimo el 3,6:1 del estado normal. |
+| **Implicaciones** | (1) Guía de Estilo (Doc 5): nuevos tokens brand-hover y brand-pressed, regla de botones y nota de contraste, ya añadidos en la v1.1. (2) Código: el frontend usaba un hover distinto y escrito a mano, `hover:bg-[#B86848]`, en 24 botones, con 4,1:1 de contraste y sin token. Se añaden `brand.hover` y `brand.pressed` a tailwind.config.js y se sustituyen esos 24 usos por `hover:bg-brand-hover active:bg-brand-pressed`. (3) Hay que revisar que ningún botón primario use texto blanco por debajo de 14 px en negrita. |
+
+**D-037 — Símbolo, nombre estilizado e iconos de KitchenBase**
+
+| **✓ DECIDIDO** | **Fecha:**** **Octubre 2026 |
+| --- | --- |
+| **Decisión** | (1) Símbolo: un gorro de chef alto, relleno, en terracota, con una K invertida (brazos a la izquierda del tallo) y una B (lóbulos a la derecha) compartiendo el tallo central. Las letras son cortes en espacio negativo del gorro, no un dibujo superpuesto. (2) Versión pequeña para menos de 32 px, con cortes más gruesos, usada en favicon y notificaciones. (3) Nombre estilizado: «KitchenBase» en Playfair Display Bold, con la K y la B en terracota y el punto de la i convertido en una bolita. (4) Logo con nombre en versión horizontal y vertical, sobre claro, sobre terracota y sobre oscuro. (5) Icono de app: gorro blanco sobre terracota, con capas separadas para Android adaptativo (primer plano, fondo terracota y monocromo). (6) Reglas: margen libre de un cuarto de la altura del símbolo, tamaño mínimo de 32 px para el símbolo completo y de 120 px de ancho para el logo horizontal; sin deformar, girar, cambiar colores, sombras, degradados ni colores del semáforo. El usuario informa de que el nombre comercial está disponible. |
+| **Alternativas** | Símbolos de olla, tarro, plato o sartén con la K recortada (descartados: poco integrados y genéricos). Bucle de la app (descartado: la temática es la cocina, no la app). Tarta cortada en K y plato con cubiertos (descartados frente al gorro, que el usuario prefirió). Gorro clásico de tres puntas, cúpula, ladeado y lineal (descartados frente al gorro alto). Gorro con B rotada (descartado: la B no se leía). Estilizaciones geométrica e icono-cuadrado del gorro alto (descartadas frente a la versión sólida). |
+| **Razonamiento** | El gorro de chef es el símbolo de cocina más reconocible y la silueta aguanta tamaños pequeños. Integrar las letras como espacio negativo, como la C de Carrefour, cumple lo pedido: letras presentes pero no evidentes. El gorro alto se eligió por equilibrio entre silueta y legibilidad de las letras. La versión pequeña evita que las letras se vuelvan textura. Usar Playfair Display mantiene D-025. |
+| **Implicaciones** | (1) Los archivos del kit (SVG y PNG) están en el repositorio, en frontend/public/brand/, y la web enlaza el favicon y el icono de iOS desde index.html. (2) Configuración de Expo con las rutas de icono, icono adaptativo, favicon y pantalla de carga, sugerida en el kit. (3) Guía de Estilo (Doc 5): nueva sección 9, Identidad de marca, y PRD §8: tokens de hover y pulsado y referencia a la identidad. (4) Mapa de Pantallas (Doc 3), pendiente: en su próxima revisión, la pantalla de bienvenida debe usar el logo vertical. (5) El diseño del gorro con sus colores de hover está en D-036. |
+
 *Añadir una entrada por cada decisión relevante tomada durante el desarrollo. No esperar a que el razonamiento se olvide.*
 
-*KitchenBase · Registro de Decisiones v1.8 · Pág. 1*
+*KitchenBase · Registro de Decisiones v1.9 · Pág. 1*
