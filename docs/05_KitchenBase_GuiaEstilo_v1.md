@@ -10,7 +10,7 @@ Versión 1.1 · Octubre 2026
 
 *Nota: este documento consolida en un único lugar las decisiones visuales ya tomadas en la PRD §8 (D-023 a D-025) y documenta los patrones de interfaz y de experiencia que el prototipo ya usa, para garantizar consistencia a medida que el proyecto pasa de Emergent a Claude Code (React Native + Expo). Las convenciones de **código** viven aparte, en el repositorio (`docs/STYLEGUIDE.md`).*
 
-*Nota de revisión v1.1 (octubre 2026): se añaden los tokens de hover y pulsado del terracota (D-036), la regla de estados de los botones primarios y una nota de contraste en accesibilidad.*
+*Nota de revisión v1.1 (octubre 2026): se añaden los tokens de hover y pulsado del terracota (D-036), la regla de estados de los botones primarios una nota de contraste en accesibilidad y la nueva sección 9, Identidad de marca (D-037).*
 
 # 1. Filosofía visual
 
@@ -80,8 +80,19 @@ Patrones que el prototipo ya usa y que deben mantenerse consistentes:
 - **Contraste del botón primario:** el texto blanco sobre terracota normal da 3,6:1, por debajo de los 4,5:1 del texto normal. Se acepta porque el texto de los botones primarios es Inter 600 de al menos 14 px (texto grande, umbral 3:1). Hover (4,6:1) y pulsado (5,9:1) lo superan. La terracota no se usa como color de texto pequeño sobre blanco.
 - Objetivos táctiles cómodos (mínimo ~44px de alto en controles principales).
 
+# 9. Identidad de marca
+
+Decisión D-037. Los archivos están en `brand/logo/` de la carpeta compartida del proyecto.
+
+- **Símbolo:** gorro de chef alto en terracota, con una K invertida y una B compartiendo el tallo, recortadas como espacio negativo. Por debajo de **32 px** se usa la versión pequeña (cortes más gruesos).
+- **Nombre:** «KitchenBase» en **Playfair Display Bold**, con la K y la B en terracota (`#C2714F`) y el resto en `#1F2937`. El punto de la i es una bolita terracota.
+- **Logo con nombre:** horizontal (cabeceras, web) y vertical (pantalla de bienvenida, redes). Sobre terracota, todo en blanco y terracota claro `#FDF3EF`. Sobre oscuro, símbolo y nombre en blanco.
+- **Margen libre:** un cuarto de la altura del símbolo por cada lado. **Tamaño mínimo:** 32 px el símbolo completo, 120 px de ancho el logo horizontal.
+- **Prohibido:** deformar, girar, cambiar los colores, añadir sombras o degradados, y usar verde, amarillo o naranja del semáforo.
+- **Icono de app:** gorro blanco sobre terracota, 1024×1024 sin transparencia ni esquinas redondeadas (iOS). En Android, primer plano transparente, fondo terracota y capa monocroma por separado, con el gorro dentro de la zona segura. Favicon con la versión pequeña. Pantalla de carga con el símbolo centrado.
+
 ---
 
-*Documento vivo. Actualizar cuando cambie un token, se añada un patrón de UI nuevo, o evolucione el tono. Las decisiones de fondo se registran en el Documento 4 (D-023 a D-025 y D-036).*
+*Documento vivo. Actualizar cuando cambie un token, se añada un patrón de UI nuevo, o evolucione el tono. Las decisiones de fondo se registran en el Documento 4 (D-023 a D-025, D-036 y D-037).*
 
 *KitchenBase · Guía de Estilo v1.0*
