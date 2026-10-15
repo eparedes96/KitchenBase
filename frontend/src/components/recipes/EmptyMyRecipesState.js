@@ -22,7 +22,7 @@ export function EmptyMyRecipesState({ onCreate }) {
         type="button"
         onClick={onCreate}
         data-testid="my-recipes-empty-create-cta"
-        className="mt-2 flex h-11 items-center justify-center gap-2 rounded-md bg-brand px-5 text-body font-semibold text-white transition-colors hover:bg-[#B86848]"
+        className="mt-2 flex h-11 items-center justify-center gap-2 rounded-md bg-brand px-5 text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed"
       >
         Crear mi primera receta
       </button>

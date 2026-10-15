@@ -27,7 +27,7 @@ export default function WelcomeScreen() {
           <Link
             to="/register"
             data-testid="welcome-register-cta"
-            className="flex h-12 w-full items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-[#B86848]"
+            className="flex h-12 w-full items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed"
           >
             Crear cuenta
           </Link>

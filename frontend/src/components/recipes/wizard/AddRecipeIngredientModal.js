@@ -310,7 +310,7 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
               onClick={handleSave}
               disabled={!canSave}
               data-testid="add-recipe-ing-save"
-              className="flex h-11 flex-1 items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-[#B86848] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 flex-1 items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed disabled:cursor-not-allowed disabled:opacity-60"
             >
               Añadir
             </button>
@@ -330,7 +330,7 @@ export function AddRecipeIngredientModal({ open, onClose, onAdd }) {
               onClick={handleCreateSubmit}
               disabled={submitting}
               data-testid="add-recipe-ing-create-submit"
-              className="flex h-11 flex-1 items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-[#B86848] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 flex-1 items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? "Proponiendo…" : "Crear y continuar"}
             </button>

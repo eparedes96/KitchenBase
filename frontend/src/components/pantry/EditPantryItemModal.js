@@ -169,7 +169,7 @@ export function EditPantryItemModal({
               onClick={handleSave}
               disabled={!canSave || submitting}
               data-testid="edit-pantry-save"
-              className="flex h-11 w-full items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-[#B86848] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 w-full items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? "Guardando…" : "Guardar cambios"}
             </button>

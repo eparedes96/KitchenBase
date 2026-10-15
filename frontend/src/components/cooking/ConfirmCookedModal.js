@@ -305,7 +305,7 @@ export function ConfirmCookedModal({
             onClick={handleConfirm}
             disabled={cantConfirm}
             data-testid="confirm-cooked-save"
-            className="flex h-11 flex-1 items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-[#B86848] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-11 flex-1 items-center justify-center rounded-md bg-brand text-body font-semibold text-white transition-colors hover:bg-brand-hover active:bg-brand-pressed disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? "Guardando…" : "Confirmar y descontar"}
           </button>
