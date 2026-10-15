@@ -4,11 +4,13 @@
 
 Guía de Estilo — Documento 5
 
-Versión 1.0 · Mayo 2026
+Versión 1.1 · Octubre 2026
 
 *Alcance: Ola 1 — MVP*
 
 *Nota: este documento consolida en un único lugar las decisiones visuales ya tomadas en la PRD §8 (D-023 a D-025) y documenta los patrones de interfaz y de experiencia que el prototipo ya usa, para garantizar consistencia a medida que el proyecto pasa de Emergent a Claude Code (React Native + Expo). Las convenciones de **código** viven aparte, en el repositorio (`docs/STYLEGUIDE.md`).*
+
+*Nota de revisión v1.1 (octubre 2026): se añaden los tokens de hover y pulsado del terracota (D-036), la regla de estados de los botones primarios y una nota de contraste en accesibilidad.*
 
 # 1. Filosofía visual
 
@@ -21,6 +23,8 @@ KitchenBase adopta un tono **limpio y funcional**: minimalista, con espacios gen
 | Color de marca | **#C2714F** (terracota) — acción primaria, iconos activos de navegación, acentos, barra superior |
 | Fondo principal | **#FFFFFF** — tarjetas y superficies |
 | Fondo secundario | **#F5F5F4** — fondo de pantalla, separadores de sección |
+| Marca hover | **#B0603F** (brand-hover) — botones primarios en hover (solo web) |
+| Marca pulsado | **#9A4F32** (brand-pressed) — botones primarios al pulsar (web y móvil) |
 | Marca clara | **#FDF3EF** (brand-light) — fondos sutiles de acento, chips/badges |
 | Texto principal | **#1F2937** — títulos, nombres, datos primarios |
 | Texto secundario | **#6B6B6B** — metadatos, etiquetas, apoyo |
@@ -54,6 +58,7 @@ Patrones que el prototipo ya usa y que deben mantenerse consistentes:
 - **Diálogo de confirmación** para toda acción destructiva (eliminar, vaciar lista), con etiqueta de acción explícita.
 - **Placeholder “Próximamente”** (componente ComingSoon) para pantallas no construidas, con título en Playfair.
 - **Pills / badges sutiles** con `brand-light` para estados: Privada, Propuesta, Borrador, Pendiente, “cálculo aproximado”.
+- **Estados de los botones primarios** (D-036): normal `#C2714F`, hover `#B0603F`, pulsado `#9A4F32`, siempre con texto blanco. En móvil solo existe el pulsado (`pressed` en `Pressable`). Los botones secundarios, fantasma y los fondos seleccionados usan `brand-light` (`#FDF3EF`) en hover. Sin sombras ni cambios de opacidad.
 - **Toasts breves** para feedback de acciones (añadido, guardado, error), no intrusivos.
 
 # 6. Tono de voz y copy
@@ -72,10 +77,11 @@ Patrones que el prototipo ya usa y que deben mantenerse consistentes:
 
 - `aria-label` en botones de solo icono (p. ej. “Añadir ingrediente”).
 - Contraste suficiente entre texto y fondo; los colores del semáforo se acompañan de texto o icono, nunca solo color.
+- **Contraste del botón primario:** el texto blanco sobre terracota normal da 3,6:1, por debajo de los 4,5:1 del texto normal. Se acepta porque el texto de los botones primarios es Inter 600 de al menos 14 px (texto grande, umbral 3:1). Hover (4,6:1) y pulsado (5,9:1) lo superan. La terracota no se usa como color de texto pequeño sobre blanco.
 - Objetivos táctiles cómodos (mínimo ~44px de alto en controles principales).
 
 ---
 
-*Documento vivo. Actualizar cuando cambie un token, se añada un patrón de UI nuevo, o evolucione el tono. Las decisiones de fondo se registran en el Documento 4 (D-023 a D-025).*
+*Documento vivo. Actualizar cuando cambie un token, se añada un patrón de UI nuevo, o evolucione el tono. Las decisiones de fondo se registran en el Documento 4 (D-023 a D-025 y D-036).*
 
 *KitchenBase · Guía de Estilo v1.0*
